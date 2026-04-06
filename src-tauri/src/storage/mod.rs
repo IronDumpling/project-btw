@@ -71,7 +71,6 @@ pub async fn list_contacts(app: AppHandle) -> Result<Vec<ContactEntry>, String> 
                 .to_string_lossy()
                 .to_string();
 
-            // Try to read name and platform from persona.md front matter
             let persona_path = path.join("persona.md");
             let (name, platform) = if persona_path.exists() {
                 parse_contact_header(&persona_path)

@@ -4,7 +4,8 @@ use tauri::{
     Manager,
 };
 
-mod commands;
+mod capture;
+mod shell;
 mod storage;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -24,16 +25,16 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            commands::capture::take_screenshot,
-            commands::capture::get_active_window_title,
-            commands::storage::read_file,
-            commands::storage::write_file,
-            commands::storage::ensure_dir,
-            commands::storage::list_contacts,
-            commands::storage::get_data_dir,
-            commands::window::toggle_overlay,
-            commands::window::show_overlay,
-            commands::window::hide_overlay,
+            capture::take_screenshot,
+            capture::get_active_window_title,
+            storage::read_file,
+            storage::write_file,
+            storage::ensure_dir,
+            storage::list_contacts,
+            storage::get_data_dir,
+            shell::toggle_overlay,
+            shell::show_overlay,
+            shell::hide_overlay,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -62,7 +63,7 @@ fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
                 }
             }
             "overlay" => {
-                let _ = commands::window::toggle_overlay_impl(app.clone());
+                let _ = shell::toggle_overlay_impl(app.clone());
             }
             _ => {}
         })
@@ -93,7 +94,7 @@ fn setup_global_shortcut(app: &mut tauri::App) -> tauri::Result<()> {
     let app_handle = app.handle().clone();
     app.global_shortcut()
         .on_shortcut(shortcut, move |_, _, _| {
-            let _ = commands::window::toggle_overlay_impl(app_handle.clone());
+            let _ = shell::toggle_overlay_impl(app_handle.clone());
         })
         .map_err(|e| {
             std::io::Error::new(std::io::ErrorKind::Other, format!("global shortcut: {e}"))

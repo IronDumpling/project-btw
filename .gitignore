@@ -28,3 +28,13 @@ dist-ssr
 
 # Local Rust/Cargo overrides (machine-specific linker paths, etc.)
 .cargo/config.toml
+
+# Python
+__pycache__/
+backend/__pycache__/ 
+*.pyc
+*.pyo
+.venv/
+
+# Gateway secrets — never commit real API keys
+backend/.env
