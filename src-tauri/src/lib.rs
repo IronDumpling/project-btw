@@ -92,13 +92,21 @@ fn setup_global_shortcut(app: &mut tauri::App) -> tauri::Result<()> {
     let shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyB);
 
     let app_handle = app.handle().clone();
-    app.global_shortcut()
-        .on_shortcut(shortcut, move |_, _, _| {
-            let _ = shell::toggle_overlay_impl(app_handle.clone());
-        })
-        .map_err(|e| {
-            std::io::Error::new(std::io::ErrorKind::Other, format!("global shortcut: {e}"))
-        })?;
+    match app.global_shortcut().on_shortcut(shortcut, move |_, _, _| {
+        let _ = shell::toggle_overlay_impl(app_handle.clone());
+    }) {
+        Ok(_) => {}
+        Err(e) => {
+            let err = e.to_string();
+            if err.contains("already registered") || err.contains("HotKey already registered") {
+                eprintln!(
+                    "[project-btw] global shortcut Ctrl+Shift+B is already in use, app will continue without this shortcut."
+                );
+            } else {
+                return Err(std::io::Error::other(format!("global shortcut: {e}")).into());
+            }
+        }
+    }
 
     Ok(())
 }

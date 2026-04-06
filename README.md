@@ -1,75 +1,116 @@
 # project-btw
 
-Tauri 2 + React + TypeScript 桌面端（Vite）。架构与阶段说明见仓库外的计划文档。
+Tauri 2 + React + TypeScript 桌面端（Vite）+ Python FastAPI 后端。架构与阶段说明见仓库外的计划文档。
 
-## 环境要求（Phase 1）
+## 目录结构
+
+| 目录 | 职责 |
+|------|------|
+| `src/` | UI Layer — React/TypeScript 前端 |
+| `src-tauri/src/capture/` | Capture Layer — 截图、获取活跃窗口标题 |
+| `src-tauri/src/storage/` | Storage Layer — 读写应用数据目录下的 MD 文件 |
+| `src-tauri/src/shell/` | App Shell — overlay 窗口控制命令 |
+| `src-tauri/src/lib.rs` | App Shell 入口 — 系统托盘、全局快捷键 |
+| `backend/` | Intelligence Layer + LLM Gateway — Python FastAPI |
+| `backend/routers/chat.py` | LLM Gateway — fast / capable 模型路由 |
+| `backend/prompts/` | Prompt 模板（Phase 4 使用） |
+
+## 环境要求
 
 - **Node.js**（建议 20+）与 **npm**
 - **Rust**（`rustup` 默认 `stable-x86_64-pc-windows-msvc`）
-- **Windows**：已安装 **Visual Studio Build Tools**，并勾选工作负载 **「使用 C++ 的桌面开发」**（或等效 MSVC 工具链），否则 `cargo` 链接阶段会失败  
-  - 勿依赖本机私有的 `.cargo/config.toml`（若曾用 LLVM `lld-link` 凑合，在装好 MSVC 后应删除该文件，使用默认 `link.exe`）
+- **Windows**：已安装 **Visual Studio Build Tools**，勾选工作负载「使用 C++ 的桌面开发」
+- **Python**（建议 3.11+）
 
 ## 安装依赖
 
 ```bash
+# 前端
 npm install
+
+# Python 后端
+cd backend
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+# source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # 然后填入真实 API key
 ```
 
-## Phase 1 结束时如何验证「一切可以运行」
+---
 
-按顺序做下面几步；**全部通过**即表示 Phase 1 中 **Tauri 壳 + Rust 后端编译 + 前端能随应用启动** 已就绪。
+## Phase 1 验证清单（当前已完成）
 
-### 1. Rust 侧能完整编译
+### 1. Rust 编译
 
 ```bash
-cd src-tauri
-cargo check
-cd ..
+cd src-tauri && cargo check
 ```
 
-- 预期：命令以 **0 退出**，无 `link.exe` / `msvcrt.lib` 等链接错误。
+预期：退出码 0，无链接错误。
 
-### 2. 桌面应用能启动（开发模式）
-
-在项目根目录执行：
+### 2. 桌面应用启动
 
 ```bash
 npm run tauri dev
 ```
 
-- 预期：
-  - 自动拉起 **Vite**（前端）与 **Tauri** 主窗口；
-  - 主窗口标题为 **project-btw**，页面能正常渲染（无白屏、控制台无致命报错）。
+预期：
+- Vite 开发服务器启动，主窗口标题为 **project-btw**，页面正常渲染
+- 任务栏通知区出现系统托盘图标，右键菜单含 **Show App / Toggle Overlay / Quit**
+- 按 **Ctrl+Shift+B** 可显示/隐藏 Overlay 窗口
 
-### 3. 系统托盘与全局快捷键
+### 3. LLM Gateway 启动
 
-应用运行后：
+```bash
+cd backend && python main.py
+```
 
-- **系统托盘**：任务栏通知区域出现应用图标；右键菜单应包含 **Show App**、**Toggle Overlay**、**Quit**（文案以实际菜单为准）。
-- **全局快捷键**：按 **Ctrl+Shift+B**，应能 **显示/隐藏** Overlay 窗口（若首次为创建窗口，随后应可切换）。
+预期：终端打印以下内容后持续运行：
 
-### 4. （可选）Storage 相关命令
+```
+INFO  project-btw LLM Gateway starting
+INFO    fast    -> groq/llama-3.3-70b-versatile
+INFO    capable -> deepseek/deepseek-chat
+INFO    listening on http://127.0.0.1:8765
+```
 
-前端或调试时若已调用 Tauri 的 `read_file` / `write_file` / `get_data_dir` 等，应能读写 **应用数据目录** 下的相对路径（如 `user/persona.md`、`contacts/...`）。未接 UI 时本步可跳过。
+### 4. Gateway 健康检查
+
+```bash
+curl http://127.0.0.1:8765/health
+```
+
+预期：
+
+```json
+{"status": "ok", "fast_model": "groq/llama-3.3-70b-versatile", "capable_model": "deepseek/deepseek-chat"}
+```
+
+### 5. 真实 LLM 调用（需在 `backend/.env` 填入真实 key）
+
+```bash
+curl -X POST http://127.0.0.1:8765/v1/chat/fast \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"hello"}]}'
+```
+
+预期：返回包含 `content` 字段的 JSON，无 `error` 字段。
 
 ---
 
-### Phase 1 尚未包含的部分
-
-- **Python + FastAPI + LiteLLM** 网关尚未接入时，**无法**通过本 README 验证「调用大模型」；该条属于计划中 Phase 1 的 **LLM Gateway** 子项，需单独实现后再加验证步骤。
-
 ## 常用命令
 
-
-| 命令                    | 说明                        |
-| --------------------- | ------------------------- |
-| `npm run dev`         | 仅浏览器中跑 Vite（无 Tauri 原生能力） |
-| `npm run tauri dev`   | 完整桌面应用开发模式                |
-| `npm run build`       | 构建前端静态资源                  |
-| `npm run tauri build` | 打包桌面安装包                   |
-
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 仅在浏览器跑 Vite（无 Tauri 原生能力） |
+| `npm run tauri dev` | 完整桌面应用开发模式 |
+| `npm run tauri build` | 打包桌面安装包 |
+| `cd backend && python main.py` | 启动 LLM Gateway（开发模式） |
+| `cd src-tauri && cargo check` | 检查 Rust 编译 |
 
 ## 推荐 IDE
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
-

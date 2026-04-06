@@ -31,10 +31,11 @@ dist-ssr
 
 # Python
 __pycache__/
-backend/__pycache__/ 
+backend/__pycache__/
 *.pyc
 *.pyo
 .venv/
+backend/.venv/
 
 # Gateway secrets — never commit real API keys
 backend/.env
