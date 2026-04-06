@@ -1,7 +1,7 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, WebviewUrl, WebviewWindowBuilder,
+    Manager,
 };
 
 mod commands;
@@ -50,7 +50,7 @@ fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
     TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
         .menu(&menu)
-        .menu_on_left_click(false)
+        .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "quit" => {
                 app.exit(0);
@@ -91,9 +91,13 @@ fn setup_global_shortcut(app: &mut tauri::App) -> tauri::Result<()> {
     let shortcut = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyB);
 
     let app_handle = app.handle().clone();
-    app.global_shortcut().on_shortcut(shortcut, move |_, _, _| {
-        let _ = commands::window::toggle_overlay_impl(app_handle.clone());
-    })?;
+    app.global_shortcut()
+        .on_shortcut(shortcut, move |_, _, _| {
+            let _ = commands::window::toggle_overlay_impl(app_handle.clone());
+        })
+        .map_err(|e| {
+            std::io::Error::new(std::io::ErrorKind::Other, format!("global shortcut: {e}"))
+        })?;
 
     Ok(())
 }
