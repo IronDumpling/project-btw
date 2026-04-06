@@ -42,17 +42,9 @@
     }
   },
   "plugins": {
-    "global-shortcut": {},
     "shell": {
-      "open": true,
-      "sidecar": true
-    },
-    "fs": {
-      "scope": {
-        "allow": ["$APPDATA/**", "$APPCONFIG/**", "$HOME/.project-btw/**"]
-      }
-    },
-    "autostart": {}
+      "open": true
+    }
   },
   "bundle": {
     "active": true,
