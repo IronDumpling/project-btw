@@ -17,8 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import litellm
 
-from config import BACKEND_HOST, BACKEND_PORT, FAST_MODEL, CAPABLE_MODEL
-from routers import chat
+from config import BACKEND_HOST, BACKEND_PORT, FAST_MODEL, CAPABLE_MODEL, VISION_MODEL
+from routers import capture, chat
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 log = logging.getLogger("gateway")
@@ -29,6 +29,7 @@ async def lifespan(_: FastAPI):
     log.info("project-btw LLM Gateway starting")
     log.info(f"  fast    -> {FAST_MODEL}")
     log.info(f"  capable -> {CAPABLE_MODEL}")
+    log.info(f"  vision  -> {VISION_MODEL}")
     log.info(f"  listening on http://{BACKEND_HOST}:{BACKEND_PORT}")
     yield
 
@@ -49,6 +50,7 @@ app.add_middleware(
 )
 
 app.include_router(chat.router)
+app.include_router(capture.router)
 
 
 @app.exception_handler(litellm.AuthenticationError)

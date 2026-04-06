@@ -1,7 +1,7 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    Emitter, Manager,
 };
 
 mod capture;
@@ -93,14 +93,29 @@ fn setup_global_shortcut(app: &mut tauri::App) -> tauri::Result<()> {
 
     let app_handle = app.handle().clone();
     match app.global_shortcut().on_shortcut(shortcut, move |_, _, _| {
-        let _ = shell::toggle_overlay_impl(app_handle.clone());
+        let app = app_handle.clone();
+        std::thread::spawn(move || {
+            // Hide overlay if already visible so the chat window is fully exposed.
+            if let Some(overlay) = app.get_webview_window("overlay") {
+                if overlay.is_visible().unwrap_or(false) {
+                    let _ = overlay.hide();
+                    std::thread::sleep(std::time::Duration::from_millis(150));
+                }
+            }
+            // Capture screen + active window title.
+            let result = capture::capture_now();
+            // Broadcast to all windows (overlay will receive it).
+            let _ = app.emit("btw-capture", &result);
+            // Show overlay.
+            let _ = shell::show_overlay_impl(app);
+        });
     }) {
         Ok(_) => {}
         Err(e) => {
             let err = e.to_string();
             if err.contains("already registered") || err.contains("HotKey already registered") {
                 eprintln!(
-                    "[project-btw] global shortcut Ctrl+Shift+B is already in use, app will continue without this shortcut."
+                    "[project-btw] Ctrl+Shift+B already in use — app continues without hotkey."
                 );
             } else {
                 return Err(std::io::Error::other(format!("global shortcut: {e}")).into());

@@ -1,0 +1,191 @@
+/* Overlay window — dark, minimal, always-on-top */
+
+.overlay-root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: rgba(18, 18, 20, 0.92);
+  backdrop-filter: blur(12px);
+  color: #f0f0f0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+}
+
+.overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-app-region: drag; /* allow dragging the window by the header */
+}
+
+.overlay-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.overlay-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.3s;
+}
+.overlay-status-dot[data-status="analyzing"] { background: #f5a623; }
+.overlay-status-dot[data-status="done"]      { background: #4cd964; }
+.overlay-status-dot[data-status="error"]     { background: #ff3b30; }
+
+.overlay-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+/* ── Loading ── */
+.overlay-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 60px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-top-color: #f5a623;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Result ── */
+.overlay-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overlay-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.overlay-platform {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.12);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.overlay-contact {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0f0f0;
+}
+
+.overlay-confidence {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-left: auto;
+}
+
+.overlay-window-title {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Messages ── */
+.overlay-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.message-user {
+  background: rgba(90, 130, 255, 0.15);
+  align-items: flex-end;
+  text-align: right;
+}
+
+.message-contact {
+  background: rgba(255, 255, 255, 0.06);
+  align-items: flex-start;
+}
+
+.message-role {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.message-text {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* ── Hints & Errors ── */
+.overlay-hint {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 13px;
+  margin-top: 60px;
+}
+
+.overlay-error {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.25);
+  border-radius: 8px;
+}
+
+.overlay-error-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ff6b6b;
+  margin: 0;
+}
+
+.overlay-error-detail {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  word-break: break-all;
+}

@@ -4,16 +4,21 @@ Tauri 2 + React + TypeScript 桌面端（Vite）+ Python FastAPI 后端。架构
 
 ## 目录结构
 
-| 目录 | 职责 |
-|------|------|
-| `src/` | UI Layer — React/TypeScript 前端 |
-| `src-tauri/src/capture/` | Capture Layer — 截图、获取活跃窗口标题 |
-| `src-tauri/src/storage/` | Storage Layer — 读写应用数据目录下的 MD 文件 |
-| `src-tauri/src/shell/` | App Shell — overlay 窗口控制命令 |
-| `src-tauri/src/lib.rs` | App Shell 入口 — 系统托盘、全局快捷键 |
-| `backend/` | Intelligence Layer + LLM Gateway — Python FastAPI |
-| `backend/routers/chat.py` | LLM Gateway — fast / capable 模型路由 |
-| `backend/prompts/` | Prompt 模板（Phase 4 使用） |
+
+| 目录                           | Layer              | 职责                                         |
+| ---------------------------- | ------------------ | ------------------------------------------ |
+| `src/`                       | UI Layer           | React/TypeScript 前端；`/` 主窗口，`/overlay` 悬浮窗 |
+| `src/lib/capture.ts`         |                    | 监听截图事件，调用 backend 分析接口                     |
+| `src/lib/gateway.ts`         |                    | LLM Gateway HTTP 客户端                       |
+| `src/windows/overlay/`       |                    | Overlay 悬浮窗组件（显示分析结果）                      |
+| `src-tauri/src/capture/`     | Capture Layer      | 截图、获取活跃窗口标题；热键触发后 emit `btw-capture` 事件    |
+| `src-tauri/src/storage/`     | Storage Layer      | 读写应用数据目录下的 MD 文件                           |
+| `src-tauri/src/shell/`       | App Shell          | Overlay 窗口控制命令                             |
+| `src-tauri/src/lib.rs`       | App Shell          | 系统托盘、全局快捷键注册                               |
+| `backend/routers/chat.py`    | LLM Gateway        | fast / capable 模型路由                        |
+| `backend/routers/capture.py` | Capture Layer      | 截图 → LLM Vision 分析 → 结构化数据                 |
+| `backend/prompts/`           | Intelligence Layer | Prompt 模板（Phase 4 使用）                      |
+
 
 ## 环境要求
 
@@ -41,7 +46,7 @@ cp .env.example .env   # 然后填入真实 API key
 
 ---
 
-## Phase 1 验证清单（当前已完成）
+## Phase 1 验证清单
 
 ### 1. Rust 编译
 
@@ -58,9 +63,10 @@ npm run tauri dev
 ```
 
 预期：
+
 - Vite 开发服务器启动，主窗口标题为 **project-btw**，页面正常渲染
 - 任务栏通知区出现系统托盘图标，右键菜单含 **Show App / Toggle Overlay / Quit**
-- 按 **Ctrl+Shift+B** 可显示/隐藏 Overlay 窗口
+- 按 **Ctrl+Shift+B** 可触发截图并显示 Overlay 窗口
 
 ### 3. LLM Gateway 启动
 
@@ -74,6 +80,7 @@ cd backend && python main.py
 INFO  project-btw LLM Gateway starting
 INFO    fast    -> groq/llama-3.3-70b-versatile
 INFO    capable -> deepseek/deepseek-chat
+INFO    vision  -> groq/llama-3.2-11b-vision-preview
 INFO    listening on http://127.0.0.1:8765
 ```
 
@@ -86,7 +93,7 @@ curl http://127.0.0.1:8765/health
 预期：
 
 ```json
-{"status": "ok", "fast_model": "groq/llama-3.3-70b-versatile", "capable_model": "deepseek/deepseek-chat"}
+{"status": "ok", "fast_model": "...", "capable_model": "..."}
 ```
 
 ### 5. 真实 LLM 调用（需在 `backend/.env` 填入真实 key）
@@ -101,16 +108,46 @@ curl -X POST http://127.0.0.1:8765/v1/chat/fast \
 
 ---
 
+## Phase 2 验证清单
+
+### 1. 截图采集 + Overlay 联动
+
+1. 启动 backend：`cd backend && python main.py`
+2. 启动应用：`npm run tauri dev`
+3. 打开任意聊天应用（微信、WhatsApp 等）
+4. 按 **Ctrl+Shift+B**
+
+预期：
+
+- Overlay 悬浮窗出现，显示 **Analyzing screenshot…** 加载状态
+- 几秒后显示提取结果：`platform` / `contact_name` / `messages` 列表
+
+### 2. Screenshot Analyzer API 直接测试
+
+```bash
+# 需要 backend 正在运行，且 .env 中有 GROQ_API_KEY
+curl -X POST http://127.0.0.1:8765/v1/capture/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"screenshot": "<base64>", "window_title": "WeChat"}'
+```
+
+预期：返回 `{ platform, contact_name, messages, confidence }` JSON。
+
+---
+
 ## 常用命令
 
-| 命令 | 说明 |
-|------|------|
-| `npm run dev` | 仅在浏览器跑 Vite（无 Tauri 原生能力） |
-| `npm run tauri dev` | 完整桌面应用开发模式 |
-| `npm run tauri build` | 打包桌面安装包 |
-| `cd backend && python main.py` | 启动 LLM Gateway（开发模式） |
-| `cd src-tauri && cargo check` | 检查 Rust 编译 |
+
+| 命令                             | 说明                        |
+| ------------------------------ | ------------------------- |
+| `npm run dev`                  | 仅在浏览器跑 Vite（无 Tauri 原生能力） |
+| `npm run tauri dev`            | 完整桌面应用开发模式                |
+| `npm run tauri build`          | 打包桌面安装包                   |
+| `cd backend && python main.py` | 启动 Python backend         |
+| `cd src-tauri && cargo check`  | 检查 Rust 编译                |
+
 
 ## 推荐 IDE
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+
