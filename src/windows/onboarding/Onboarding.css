@@ -1,0 +1,546 @@
+/* Onboarding window — dark, centered card */
+
+.ob-root {
+  min-height: 100vh;
+  background: var(--btw-bg);
+  color: var(--btw-text);
+  font-family: var(--btw-font);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.ob-card {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ── Progress bar ── */
+
+.ob-progress {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.ob-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--btw-text-whisper);
+  transition: background var(--btw-ease), transform var(--btw-ease);
+  flex-shrink: 0;
+}
+
+.ob-step-dot.active {
+  background: var(--btw-accent);
+  transform: scale(1.35);
+}
+
+.ob-step-dot.done {
+  background: var(--btw-success);
+}
+
+.ob-step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--btw-border);
+  margin: 0 6px;
+}
+
+/* ── Step header ── */
+
+.ob-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ob-step-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--btw-accent);
+}
+
+.ob-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--btw-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.ob-subtitle {
+  font-size: 13px;
+  color: var(--btw-text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Fields ── */
+
+.ob-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ob-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ob-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--btw-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ob-label-opt {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--btw-text-faint);
+}
+
+/* Text input */
+
+.ob-input {
+  background: var(--btw-border-faint);
+  border: 1px solid var(--btw-border);
+  border-radius: var(--btw-radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--btw-text);
+  outline: none;
+  width: 100%;
+  transition: border-color var(--btw-ease), background var(--btw-ease);
+}
+
+.ob-input::placeholder {
+  color: var(--btw-text-ghost);
+}
+
+.ob-input:focus {
+  border-color: var(--btw-accent);
+  background: var(--btw-accent-dim);
+}
+
+/* Select */
+
+.ob-select {
+  background: var(--btw-border-faint);
+  border: 1px solid var(--btw-border);
+  border-radius: var(--btw-radius);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--btw-text);
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color var(--btw-ease);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.ob-select:focus {
+  border-color: var(--btw-accent);
+}
+
+.ob-select option {
+  background: #1c1c1e;
+  color: var(--btw-text);
+}
+
+/* Radio group */
+
+.ob-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ob-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--btw-bg-raised);
+  border: 1px solid var(--btw-border-subtle);
+  border-radius: var(--btw-radius);
+  cursor: pointer;
+  transition: background var(--btw-ease-fast), border-color var(--btw-ease-fast);
+  user-select: none;
+}
+
+.ob-radio-option:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ob-radio-option.selected {
+  background: var(--btw-accent-soft);
+  border-color: var(--btw-accent-border);
+}
+
+.ob-radio-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--btw-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color var(--btw-ease-fast);
+}
+
+.ob-radio-option.selected .ob-radio-dot {
+  border-color: var(--btw-accent);
+}
+
+.ob-radio-fill {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--btw-accent);
+  opacity: 0;
+  transition: opacity var(--btw-ease-fast);
+}
+
+.ob-radio-option.selected .ob-radio-fill {
+  opacity: 1;
+}
+
+.ob-radio-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Checkbox group */
+
+.ob-check-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ob-check-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--btw-bg-raised);
+  border: 1px solid var(--btw-border-subtle);
+  border-radius: var(--btw-radius);
+  cursor: pointer;
+  transition: background var(--btw-ease-fast), border-color var(--btw-ease-fast);
+  user-select: none;
+}
+
+.ob-check-option:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ob-check-option.selected {
+  background: var(--btw-success-dim);
+  border-color: var(--btw-success-border);
+}
+
+.ob-check-option.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ob-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--btw-radius-xs);
+  border: 2px solid var(--btw-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color var(--btw-ease-fast), background var(--btw-ease-fast);
+}
+
+.ob-check-option.selected .ob-checkbox {
+  border-color: var(--btw-success);
+  background: var(--btw-success);
+}
+
+.ob-check-mark {
+  font-size: 10px;
+  color: var(--btw-bg);
+  line-height: 1;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity var(--btw-ease-fast);
+}
+
+.ob-check-option.selected .ob-check-mark {
+  opacity: 1;
+}
+
+.ob-check-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ob-check-limit {
+  font-size: 11px;
+  color: var(--btw-text-faint);
+  margin-top: 2px;
+}
+
+/* Tag input */
+
+.ob-tag-input-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--btw-border-faint);
+  border: 1px solid var(--btw-border);
+  border-radius: var(--btw-radius);
+  min-height: 44px;
+  cursor: text;
+  transition: border-color var(--btw-ease);
+}
+
+.ob-tag-input-wrap:focus-within {
+  border-color: var(--btw-accent);
+}
+
+.ob-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(167, 139, 250, 0.15);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  border-radius: var(--btw-radius-xs);
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--btw-accent-light);
+}
+
+.ob-tag-remove {
+  background: none;
+  border: none;
+  color: rgba(196, 181, 253, 0.6);
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.ob-tag-remove:hover {
+  color: var(--btw-accent-light);
+}
+
+.ob-tag-text-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--btw-text);
+  font-size: 14px;
+  min-width: 80px;
+  flex: 1;
+}
+
+.ob-tag-text-input::placeholder {
+  color: var(--btw-text-ghost);
+}
+
+.ob-tag-hint {
+  font-size: 11px;
+  color: var(--btw-text-ghost);
+  margin-top: 4px;
+}
+
+/* Inline notice banner */
+
+.ob-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--btw-warning-dim);
+  border: 1px solid var(--btw-warning-border);
+  border-radius: var(--btw-radius);
+  font-size: 12px;
+  color: rgba(245, 166, 35, 0.85);
+  line-height: 1.5;
+}
+
+.ob-notice-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Review screen ── */
+
+.ob-review {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ob-review-section {
+  background: var(--btw-bg-raised);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--btw-radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ob-review-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--btw-text-dim);
+}
+
+.ob-review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.ob-review-key {
+  color: var(--btw-text-muted);
+  flex-shrink: 0;
+}
+
+.ob-review-val {
+  color: rgba(255, 255, 255, 0.85);
+  text-align: right;
+  word-break: break-word;
+}
+
+.ob-review-val.empty {
+  color: var(--btw-text-whisper);
+  font-style: italic;
+}
+
+/* ── Generating state ── */
+
+.ob-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 48px 0;
+  text-align: center;
+}
+
+.ob-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--btw-border);
+  border-top-color: var(--btw-accent);
+  border-radius: 50%;
+  animation: btw-spin 0.8s linear infinite;
+}
+
+.ob-generating-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ob-generating-sub {
+  font-size: 13px;
+  color: var(--btw-text-faint);
+}
+
+/* ── Error ── */
+
+.ob-error {
+  padding: 14px 16px;
+  background: var(--btw-error-dim);
+  border: 1px solid var(--btw-error-border);
+  border-radius: var(--btw-radius-md);
+  font-size: 13px;
+  color: var(--btw-error);
+  line-height: 1.5;
+}
+
+/* ── Navigation bar ── */
+
+.ob-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.ob-btn {
+  padding: 10px 20px;
+  border-radius: var(--btw-radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background var(--btw-ease-fast), opacity var(--btw-ease-fast);
+  outline: none;
+}
+
+.ob-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ob-btn-ghost {
+  background: transparent;
+  color: var(--btw-text-muted);
+  border: 1px solid var(--btw-border-medium);
+}
+
+.ob-btn-ghost:hover:not(:disabled) {
+  background: var(--btw-border-faint);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ob-btn-primary {
+  background: var(--btw-accent);
+  color: var(--btw-bg);
+  min-width: 100px;
+}
+
+.ob-btn-primary:hover:not(:disabled) {
+  background: var(--btw-accent-light);
+}
+
+.ob-btn-success {
+  background: var(--btw-success);
+  color: var(--btw-bg);
+  min-width: 140px;
+}
+
+.ob-btn-success:hover:not(:disabled) {
+  background: var(--btw-success-light);
+}
+
+.ob-nav-spacer {
+  flex: 1;
+}

@@ -1,0 +1,56 @@
+/**
+ * project-btw Global Styles
+ *
+ * Base reset, :root typography, and shared @keyframes.
+ * Import after tokens.css, before any component CSS.
+ */
+
+/* ── Reset ────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+
+:root {
+  font-family: var(--btw-font);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: var(--btw-text);
+  background-color: var(--btw-bg);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--btw-border-medium) transparent;
+}
+
+/* ── Shared @keyframes ────────────────────────────────────── */
+
+/**
+ * Single spinner animation used by all windows.
+ * Reference: animation: btw-spin 0.8s linear infinite;
+ */
+@keyframes btw-spin {
+  to { transform: rotate(360deg); }
+}

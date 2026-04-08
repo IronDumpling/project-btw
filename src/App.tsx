@@ -1,51 +1,59 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useNavigate } from "react-router-dom";
 import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+/**
+ * Main application shell.
+ *
+ * On mount: reads user/persona.md from the app data directory.
+ * If the file is missing or empty, redirects to /onboarding so the user
+ * fills in their profile before using the app.
+ */
+export default function App() {
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+  useEffect(() => {
+    (async () => {
+      try {
+        const content: string = await invoke("read_file", {
+          relativePath: "user/persona.md",
+        });
+        if (!content || content.trim().length === 0) {
+          navigate("/onboarding");
+        }
+      } catch {
+        navigate("/onboarding");
+      } finally {
+        setChecking(false);
+      }
+    })();
+  }, [navigate]);
+
+  if (checking) {
+    return (
+      <div className="app-loading">
+        <div className="app-loading-spinner" />
+      </div>
+    );
   }
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <main className="app-shell">
+      <header className="app-header">
+        <span className="app-logo">project-btw</span>
+        <span className="app-tagline">Your relationship intelligence layer</span>
+      </header>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+      <section className="app-body">
+        <p className="app-placeholder">
+          主界面 — Contact Browser 和 Settings 将在 Phase 5 / 6 实现
+        </p>
+        <p className="app-hint">
+          按 <kbd>Ctrl+Shift+B</kbd> 触发截图分析，查看浮窗
+        </p>
+      </section>
     </main>
   );
 }
-
-export default App;
