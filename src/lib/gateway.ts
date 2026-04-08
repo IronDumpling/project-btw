@@ -1,12 +1,15 @@
 /**
- * LiteLLM Gateway client
+ * project-btw backend client
  *
  * Talks to the local Python backend at http://127.0.0.1:8765
  *
- * Two tiers:
- *   chatFast    → Subtext Analyzer, Reply Generator       (low latency)
- *   chatCapable → Persona/Relationship/Conversation jobs  (deep reasoning)
+ * Three routing scenarios aligned with Intelligence Layer:
+ *   chatRealtime   → Real-time Engine: Subtext Analyzer, Reply Generator  (latency < 1s)
+ *   chatBackground → Background Engine: Compressor, Persona/Relationship  (quality first)
+ *   analyzeScreenshot → Capture Layer: screenshot OCR + parsing           (vision models)
  */
+
+import { listen } from "@tauri-apps/api/event";
 
 const BASE_URL = "http://127.0.0.1:8765";
 
@@ -32,6 +35,28 @@ export interface ChatResponse {
     total_tokens: number;
   };
 }
+
+// Capture types (mirrors Rust CaptureResult + backend AnalyzeResponse)
+export interface CaptureEvent {
+  screenshot: string;   // base64-encoded PNG
+  window_title: string;
+  timestamp: string;    // ISO-8601
+}
+
+export interface ExtractedMessage {
+  role: "user" | "contact";
+  text: string;
+}
+
+export interface AnalyzeResponse {
+  platform: string | null;
+  contact_name: string | null;
+  messages: ExtractedMessage[];
+  confidence: number;
+  vision_model: string;
+}
+
+// ── Internal helpers ───────────────────────────────────────────────────────────
 
 async function post(endpoint: string, body: ChatRequest): Promise<ChatResponse> {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
@@ -83,17 +108,41 @@ async function stream(
   return full;
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// ── Public API ─────────────────────────────────────────────────────────────────
 
-/** Fast tier — real-time, for Subtext Analyzer and Reply Generator */
-export const chatFast = (req: ChatRequest) => post("/v1/chat/fast", req);
-export const streamFast = (req: ChatRequest, onToken: (t: string) => void) =>
-  stream("/v1/chat/fast", req, onToken);
+/** Real-time Engine — Subtext Analyzer and Reply Generator (low latency) */
+export const chatRealtime = (req: ChatRequest) => post("/v1/realtime/chat", req);
+export const streamRealtime = (req: ChatRequest, onToken: (t: string) => void) =>
+  stream("/v1/realtime/chat", req, onToken);
 
-/** Capable tier — background, for Persona / Relationship / Conversation jobs */
-export const chatCapable = (req: ChatRequest) => post("/v1/chat/capable", req);
-export const streamCapable = (req: ChatRequest, onToken: (t: string) => void) =>
-  stream("/v1/chat/capable", req, onToken);
+/** Background Engine — Compressor, Persona / Relationship Updaters (quality first) */
+export const chatBackground = (req: ChatRequest) => post("/v1/background/chat", req);
+export const streamBackground = (req: ChatRequest, onToken: (t: string) => void) =>
+  stream("/v1/background/chat", req, onToken);
+
+/** Capture Layer — send screenshot to vision LLM for OCR + parsing */
+export async function analyzeScreenshot(
+  screenshot: string,
+  windowTitle: string,
+): Promise<AnalyzeResponse> {
+  const res = await fetch(`${BASE_URL}/v1/capture/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ screenshot, window_title: windowTitle }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Capture error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+/** Listen for Ctrl+Shift+B capture events emitted by Rust */
+export function onCaptureTriggered(
+  callback: (event: CaptureEvent) => void,
+): Promise<() => void> {
+  return listen<CaptureEvent>("btw-capture", (e) => callback(e.payload));
+}
 
 /** Health check — true if backend is reachable */
 export async function backendHealthy(): Promise<boolean> {

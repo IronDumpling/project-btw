@@ -5,14 +5,13 @@ Capture Layer endpoints.
     Input : screenshot (base64 data-URL) + window_title
     Output: platform, contact_name, extracted messages
 
-The analysis is done in a single LLM vision call — no separate OCR library
-required. The vision model reads the screenshot image directly and returns
-structured JSON.
+Analysis is done in a single LLM vision call using CAPTURE_MODELS (ordered
+fallback list). The first model that succeeds wins. Vision-capable models only.
 
-Supported vision models (set VISION_MODEL in .env):
-  groq/llama-3.2-11b-vision-preview   (default, uses existing GROQ_API_KEY)
-  gpt-4o                               (needs OPENAI_API_KEY)
-  claude-3-5-sonnet-20241022           (needs ANTHROPIC_API_KEY)
+Supported vision models (configure via CAPTURE_MODELS in .env):
+  gpt-4o                          (default primary,  needs OPENAI_API_KEY)
+  claude-3-5-sonnet-20241022      (fallback,          needs ANTHROPIC_API_KEY)
+  groq/llama-3.2-11b-vision-preview (budget option,  needs GROQ_API_KEY)
 """
 
 import json
@@ -22,7 +21,7 @@ import litellm
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from config import VISION_MODEL
+from config import CAPTURE_MODELS
 
 log = logging.getLogger("backend.capture")
 router = APIRouter(prefix="/v1/capture", tags=["capture"])
@@ -48,6 +47,12 @@ JSON schema:
 }
 """
 
+_RETRYABLE = (
+    litellm.AuthenticationError,
+    litellm.RateLimitError,
+    litellm.NotFoundError,
+)
+
 
 class AnalyzeRequest(BaseModel):
     screenshot: str       # "data:image/png;base64,..." or raw base64
@@ -64,14 +69,14 @@ class AnalyzeResponse(BaseModel):
     contact_name: str | None
     messages: list[ExtractedMessage]
     confidence: float
-    vision_model: str
+    vision_model: str     # which model actually responded
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_screenshot(req: AnalyzeRequest):
     """
-    Send a screenshot to the vision LLM.
-    Returns structured platform / contact / message data.
+    Capture Layer: send screenshot to vision LLM.
+    Tries CAPTURE_MODELS in order; falls back on auth/rate-limit/not-found errors.
     """
     image_url = (
         req.screenshot
@@ -90,23 +95,45 @@ async def analyze_screenshot(req: AnalyzeRequest):
         },
     ]
 
-    try:
-        response = await litellm.acompletion(
-            model=VISION_MODEL,
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": user_content},
-            ],
-            max_tokens=1024,
-            temperature=0.1,
+    messages = [
+        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "user", "content": user_content},
+    ]
+
+    last_err: Exception | None = None
+    used_model: str = CAPTURE_MODELS[0] if CAPTURE_MODELS else "unknown"
+
+    for model in CAPTURE_MODELS:
+        try:
+            log.debug("capture/analyze: trying %s", model)
+            response = await litellm.acompletion(
+                model=model,
+                messages=messages,
+                max_tokens=1024,
+                temperature=0.1,
+            )
+            used_model = model
+            break
+        except litellm.BadRequestError as e:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "bad_request", "model": model, "message": str(e)},
+            )
+        except _RETRYABLE as e:
+            log.warning("capture/analyze: %s failed (%s), trying next", model, type(e).__name__)
+            last_err = e
+        except Exception as e:
+            log.exception("capture/analyze: unexpected error from %s", model)
+            last_err = e
+    else:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "error": "all_models_failed",
+                "models_tried": CAPTURE_MODELS,
+                "last_error": str(last_err),
+            },
         )
-    except litellm.AuthenticationError as e:
-        raise HTTPException(status_code=401, detail={"error": "invalid_api_key", "message": str(e)})
-    except litellm.BadRequestError as e:
-        raise HTTPException(status_code=400, detail={"error": "bad_request", "message": str(e)})
-    except Exception as e:
-        log.exception("Vision model error")
-        raise HTTPException(status_code=500, detail={"error": "vision_error", "message": str(e)})
 
     raw = (response.choices[0].message.content or "{}").strip()
 
@@ -120,7 +147,7 @@ async def analyze_screenshot(req: AnalyzeRequest):
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
-        log.warning("Vision model returned non-JSON: %s", raw[:300])
+        log.warning("capture/analyze: %s returned non-JSON: %s", used_model, raw[:300])
         raise HTTPException(
             status_code=500,
             detail={"error": "parse_error", "message": f"Model returned non-JSON: {raw[:200]}"},
@@ -131,5 +158,5 @@ async def analyze_screenshot(req: AnalyzeRequest):
         contact_name=data.get("contact_name"),
         messages=[ExtractedMessage(**m) for m in data.get("messages", [])],
         confidence=float(data.get("confidence", 0.0)),
-        vision_model=VISION_MODEL,
+        vision_model=used_model,
     )

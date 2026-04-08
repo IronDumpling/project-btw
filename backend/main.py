@@ -1,6 +1,6 @@
 """
-project-btw LLM Gateway
-FastAPI server wrapping LiteLLM for fast / capable model routing.
+project-btw Backend
+FastAPI server: LLM Gateway + Intelligence Layer routing.
 
 Start:
     python main.py
@@ -17,27 +17,33 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import litellm
 
-from config import BACKEND_HOST, BACKEND_PORT, FAST_MODEL, CAPABLE_MODEL, VISION_MODEL
-from routers import capture, chat
+from config import (
+    BACKEND_HOST,
+    BACKEND_PORT,
+    CAPTURE_MODELS,
+    REALTIME_MODELS,
+    BACKGROUND_MODELS,
+)
+from routers import background, capture, realtime
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
-log = logging.getLogger("gateway")
+log = logging.getLogger("backend")
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    log.info("project-btw LLM Gateway starting")
-    log.info(f"  fast    -> {FAST_MODEL}")
-    log.info(f"  capable -> {CAPABLE_MODEL}")
-    log.info(f"  vision  -> {VISION_MODEL}")
+    log.info("project-btw backend starting")
+    log.info(f"  capture    -> {CAPTURE_MODELS}")
+    log.info(f"  realtime   -> {REALTIME_MODELS}")
+    log.info(f"  background -> {BACKGROUND_MODELS}")
     log.info(f"  listening on http://{BACKEND_HOST}:{BACKEND_PORT}")
     yield
 
 
 app = FastAPI(
-    title="project-btw LLM Gateway",
-    description="Fast (real-time) and capable (background) model routing via LiteLLM",
-    version="0.1.0",
+    title="project-btw Backend",
+    description="Intelligence Layer + LLM Gateway — Capture / Real-time / Background routing",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -49,8 +55,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat.router)
 app.include_router(capture.router)
+app.include_router(realtime.router)
+app.include_router(background.router)
 
 
 @app.exception_handler(litellm.AuthenticationError)
@@ -70,13 +77,18 @@ async def bad_request_handler(_: Request, exc: litellm.BadRequestError):
 
 @app.exception_handler(Exception)
 async def generic_handler(_: Request, exc: Exception):
-    log.exception("Unhandled gateway error")
+    log.exception("Unhandled error")
     return JSONResponse(status_code=500, content={"error": "internal_error", "detail": str(exc)})
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "fast_model": FAST_MODEL, "capable_model": CAPABLE_MODEL}
+    return {
+        "status": "ok",
+        "capture_models": CAPTURE_MODELS,
+        "realtime_models": REALTIME_MODELS,
+        "background_models": BACKGROUND_MODELS,
+    }
 
 
 if __name__ == "__main__":
