@@ -20,11 +20,15 @@ import litellm
 from config import (
     BACKEND_HOST,
     BACKEND_PORT,
+    PERCEPTION_MODELS,
+    REASONING_MODELS,
+    LEARNING_MODELS,
+    # backward-compat aliases (old routers still work)
     CAPTURE_MODELS,
     REALTIME_MODELS,
     BACKGROUND_MODELS,
 )
-from routers import background, capture, realtime
+from routers import background, capture, realtime, perception, reasoning, learning, intelligence
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 log = logging.getLogger("backend")
@@ -33,9 +37,9 @@ log = logging.getLogger("backend")
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     log.info("project-btw backend starting")
-    log.info(f"  capture    -> {CAPTURE_MODELS}")
-    log.info(f"  realtime   -> {REALTIME_MODELS}")
-    log.info(f"  background -> {BACKGROUND_MODELS}")
+    log.info(f"  perception -> {PERCEPTION_MODELS}")
+    log.info(f"  reasoning  -> {REASONING_MODELS}")
+    log.info(f"  learning   -> {LEARNING_MODELS}")
     log.info(f"  listening on http://{BACKEND_HOST}:{BACKEND_PORT}")
     yield
 
@@ -55,6 +59,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# New governance-based routers (canonical)
+app.include_router(perception.router)
+app.include_router(reasoning.router)
+app.include_router(learning.router)
+app.include_router(intelligence.router)
+
+# Legacy routers kept for backward compatibility
 app.include_router(capture.router)
 app.include_router(realtime.router)
 app.include_router(background.router)
@@ -85,9 +96,9 @@ async def generic_handler(_: Request, exc: Exception):
 async def health():
     return {
         "status": "ok",
-        "capture_models": CAPTURE_MODELS,
-        "realtime_models": REALTIME_MODELS,
-        "background_models": BACKGROUND_MODELS,
+        "perception_models": PERCEPTION_MODELS,
+        "reasoning_models": REASONING_MODELS,
+        "learning_models": LEARNING_MODELS,
     }
 
 

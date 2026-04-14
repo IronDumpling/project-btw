@@ -6,7 +6,7 @@ fn get_or_create_overlay(app: &AppHandle) -> tauri::Result<tauri::WebviewWindow>
     }
     WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("overlay".into()))
         .title("project-btw overlay")
-        .inner_size(420.0, 600.0)
+        .inner_size(280.0, 76.0)
         .position(20.0, 100.0)
         .resizable(true)
         .decorations(false)
@@ -50,6 +50,21 @@ pub async fn show_overlay(app: AppHandle) -> Result<(), String> {
 pub async fn hide_overlay(app: AppHandle) -> Result<(), String> {
     if let Some(overlay) = app.get_webview_window("overlay") {
         overlay.hide().map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Resize the overlay window. Called by frontend when expanding/collapsing the bubble.
+/// Collapsed: 280×76, Expanded: 420×520
+#[tauri::command]
+pub async fn resize_overlay(app: AppHandle, width: u32, height: u32) -> Result<(), String> {
+    if let Some(overlay) = app.get_webview_window("overlay") {
+        overlay
+            .set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                width,
+                height,
+            }))
+            .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

@@ -57,11 +57,11 @@ async def realtime_chat(req: ChatRequest):
 
     if req.stream:
         return StreamingResponse(
-            stream_with_fallback(REALTIME_MODELS, messages, **kwargs),
+            stream_with_fallback(REALTIME_MODELS, messages, endpoint="reasoning", **kwargs),
             media_type="text/event-stream",
         )
 
-    response = await complete_with_fallback(REALTIME_MODELS, messages, **kwargs)
+    response = await complete_with_fallback(REALTIME_MODELS, messages, endpoint="reasoning", **kwargs)
     content = response.choices[0].message.content or ""
     usage = {}
     if response.usage:

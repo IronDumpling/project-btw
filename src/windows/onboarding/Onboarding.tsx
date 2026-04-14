@@ -151,6 +151,8 @@ function TagInput({
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const SEPARATORS = /[,，、]/;
+
   const addTag = () => {
     const trimmed = input.trim();
     if (trimmed && !value.includes(trimmed)) {
@@ -160,11 +162,25 @@ function TagInput({
   };
 
   const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === "Enter" || SEPARATORS.test(e.key)) {
       e.preventDefault();
       addTag();
     } else if (e.key === "Backspace" && input === "" && value.length > 0) {
       onChange(value.slice(0, -1));
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const parts = raw.split(SEPARATORS);
+    if (parts.length > 1) {
+      const newTags = parts
+        .map((p) => p.trim())
+        .filter((p) => p && !value.includes(p));
+      if (newTags.length > 0) onChange([...value, ...newTags]);
+      setInput("");
+    } else {
+      setInput(raw);
     }
   };
 
@@ -192,14 +208,14 @@ function TagInput({
           ref={inputRef}
           className="ob-tag-text-input"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKey}
           onBlur={addTag}
           placeholder={value.length === 0 ? placeholder : ""}
           autoFocus={autoFocus}
         />
       </div>
-      <p className="ob-tag-hint">按 Enter 或逗号添加，Backspace 删除最后一个</p>
+      <p className="ob-tag-hint">按 Enter 或 、 添加，Backspace 删除最后一个</p>
     </>
   );
 }
@@ -657,7 +673,7 @@ export default function Onboarding() {
         content: personaContent,
       });
 
-      navigate("/");
+      navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStep(TOTAL_STEPS); // go back to review so user can retry

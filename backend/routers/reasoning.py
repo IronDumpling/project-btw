@@ -1,12 +1,13 @@
 """
-Background Engine router.
+Reasoning Layer router.
 
-  POST /v1/background/chat
+  POST /v1/reasoning/chat
 
-Serves: Conversation Compressor, User Persona Updater,
-        Contact Persona Updater, Relationship Updater.
-Priority: output quality, long-context handling, cost gradient.
-Model list: BACKGROUND_MODELS (gpt-5.1 → gpt-4o-mini → claude → deepseek fallback).
+Governance: stateless, idempotent, auto-triggered after Perception.
+Safe to retry on failure — no Storage writes occur here.
+Model list: REASONING_MODELS (Groq llama → gpt-4o-mini fallback).
+
+Used by: Subtext Analyzer, Reply Generator (via /v1/intelligence/* or directly).
 """
 
 import logging
@@ -16,11 +17,11 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from config import BACKGROUND_MODELS
+from config import REASONING_MODELS
 from utils import complete_with_fallback, stream_with_fallback
 
-log = logging.getLogger("backend.background")
-router = APIRouter(prefix="/v1/background", tags=["background"])
+log = logging.getLogger("backend.reasoning")
+router = APIRouter(prefix="/v1/reasoning", tags=["reasoning"])
 
 
 class Message(BaseModel):
@@ -31,8 +32,8 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     messages: list[Message]
     stream: bool = False
-    temperature: float = 0.3   # lower default — background tasks need deterministic output
-    max_tokens: int = 4096     # higher default — compressor/updater outputs can be long
+    temperature: float = 0.7
+    max_tokens: int = 1024
     metadata: dict[str, Any] = {}
 
 
@@ -47,22 +48,23 @@ def _to_litellm(req: ChatRequest) -> list[dict]:
 
 
 @router.post("/chat")
-async def background_chat(req: ChatRequest):
+async def reasoning_chat(req: ChatRequest):
     """
-    Background Engine endpoint.
-    Used by: Conversation Compressor, Persona Updater, Relationship Updater.
-    Tries BACKGROUND_MODELS in order; falls back on auth/rate-limit/not-found errors.
+    Reasoning Layer endpoint.
+    Governance: stateless, safe to auto-retry, no Storage side-effects.
+    Used by: Subtext Analyzer, Reply Generator.
+    Tries REASONING_MODELS in order; falls back on auth/rate-limit/not-found errors.
     """
     messages = _to_litellm(req)
     kwargs = dict(temperature=req.temperature, max_tokens=req.max_tokens)
 
     if req.stream:
         return StreamingResponse(
-            stream_with_fallback(BACKGROUND_MODELS, messages, endpoint="learning", **kwargs),
+            stream_with_fallback(REASONING_MODELS, messages, endpoint="reasoning", **kwargs),
             media_type="text/event-stream",
         )
 
-    response = await complete_with_fallback(BACKGROUND_MODELS, messages, endpoint="learning", **kwargs)
+    response = await complete_with_fallback(REASONING_MODELS, messages, endpoint="reasoning", **kwargs)
     content = response.choices[0].message.content or ""
     usage = {}
     if response.usage:

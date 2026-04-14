@@ -45,6 +45,28 @@ pub async fn ensure_dir(app: AppHandle, relative_path: String) -> Result<(), Str
     fs::create_dir_all(&path).map_err(|e| e.to_string())
 }
 
+/// Atomically rename `from_path` to `to_path` within the app data directory.
+/// Used for the H3 persona patch flow: write to .tmp, then rename to official path.
+/// On failure the original file is unaffected.
+#[tauri::command]
+pub async fn rename_file(
+    app: AppHandle,
+    from_path: String,
+    to_path: String,
+) -> Result<(), String> {
+    let base = app_data_dir(&app);
+    let from = base.join(&from_path);
+    let to = base.join(&to_path);
+
+    if !from.exists() {
+        return Err(format!("rename_file: source not found: {}", from_path));
+    }
+    if let Some(parent) = to.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    fs::rename(&from, &to).map_err(|e| e.to_string())
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ContactEntry {
     pub id: String,

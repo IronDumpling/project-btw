@@ -30,11 +30,13 @@ pub fn run() {
             storage::read_file,
             storage::write_file,
             storage::ensure_dir,
+            storage::rename_file,
             storage::list_contacts,
             storage::get_data_dir,
             shell::toggle_overlay,
             shell::show_overlay,
             shell::hide_overlay,
+            shell::resize_overlay,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
