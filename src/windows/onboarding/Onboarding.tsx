@@ -573,16 +573,6 @@ function makeEmpty(): FormData {
   };
 }
 
-async function loadPersonaBuildPrompt(): Promise<string> {
-  // Read the prompt template from the backend
-  await fetch("http://127.0.0.1:8765/v1/background/chat", {
-    method: "HEAD",
-  }).catch(() => null);
-  // We embed the prompt inline since we can't read backend files from the frontend.
-  // The actual template is at backend/prompts/persona/user_builder.md + schema.md.
-  return PERSONA_BUILD_SYSTEM_PROMPT;
-}
-
 // Inline system prompt (mirrors backend/prompts/persona/user_builder.md + schema.md)
 const PERSONA_BUILD_SYSTEM_PROMPT = `You are a persona architect. Read structured self-report data from an onboarding questionnaire and produce a well-formed user/persona.md file.
 
@@ -654,8 +644,6 @@ export default function Onboarding() {
     setError(null);
 
     try {
-      await loadPersonaBuildPrompt(); // warm-up / no-op
-
       const userMessage = `Please generate a user/persona.md file based on this onboarding data:\n\n${JSON.stringify(form, null, 2)}`;
 
       const response = await chatLearning({

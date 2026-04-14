@@ -6,9 +6,6 @@ Perception Layer router.
 Governance: stateless, idempotent, auto-triggered by hotkey.
 Vision-capable models only (image input required).
 Model list: PERCEPTION_MODELS (gpt-4o → claude-3-5-sonnet fallback).
-
-This router replaces /v1/capture/analyze. The old capture router is kept
-for backward compatibility but points to PERCEPTION_MODELS via alias.
 """
 
 import json
