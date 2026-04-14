@@ -1,11 +1,13 @@
 """
-Real-time Engine router.
+Reasoning Layer router.
 
-  POST /v1/realtime/chat
+  POST /v1/reasoning/chat
 
-Serves: Subtext Analyzer, Reply Generator.
-Priority: latency < 1s, streaming preferred.
-Model list: REALTIME_MODELS (Groq → gpt-4o-mini fallback).
+Governance: stateless, idempotent, auto-triggered after Perception.
+Safe to retry on failure — no Storage writes occur here.
+Model list: REASONING_MODELS (Groq llama → gpt-4o-mini fallback).
+
+Used by: Subtext Analyzer, Reply Generator (via /v1/intelligence/* or directly).
 """
 
 import logging
@@ -15,11 +17,11 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from config import REALTIME_MODELS
+from config import REASONING_MODELS
 from utils import complete_with_fallback, stream_with_fallback
 
-log = logging.getLogger("backend.realtime")
-router = APIRouter(prefix="/v1/realtime", tags=["realtime"])
+log = logging.getLogger("backend.reasoning")
+router = APIRouter(prefix="/v1/reasoning", tags=["reasoning"])
 
 
 class Message(BaseModel):
@@ -46,22 +48,23 @@ def _to_litellm(req: ChatRequest) -> list[dict]:
 
 
 @router.post("/chat")
-async def realtime_chat(req: ChatRequest):
+async def reasoning_chat(req: ChatRequest):
     """
-    Real-time Engine endpoint.
+    Reasoning Layer endpoint.
+    Governance: stateless, safe to auto-retry, no Storage side-effects.
     Used by: Subtext Analyzer, Reply Generator.
-    Tries REALTIME_MODELS in order; falls back on auth/rate-limit/not-found errors.
+    Tries REASONING_MODELS in order; falls back on auth/rate-limit/not-found errors.
     """
     messages = _to_litellm(req)
     kwargs = dict(temperature=req.temperature, max_tokens=req.max_tokens)
 
     if req.stream:
         return StreamingResponse(
-            stream_with_fallback(REALTIME_MODELS, messages, **kwargs),
+            stream_with_fallback(REASONING_MODELS, messages, endpoint="reasoning", **kwargs),
             media_type="text/event-stream",
         )
 
-    response = await complete_with_fallback(REALTIME_MODELS, messages, **kwargs)
+    response = await complete_with_fallback(REASONING_MODELS, messages, endpoint="reasoning", **kwargs)
     content = response.choices[0].message.content or ""
     usage = {}
     if response.usage:

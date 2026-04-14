@@ -3,13 +3,13 @@ Shared LLM completion helpers with ordered model fallback.
 
 Usage:
     from utils import complete_with_fallback, stream_with_fallback
-    from config import REALTIME_MODELS
+    from config import REASONING_MODELS
 
     # Non-streaming
-    response = await complete_with_fallback(REALTIME_MODELS, messages, max_tokens=512)
+    response = await complete_with_fallback(REASONING_MODELS, messages, max_tokens=512)
 
     # Streaming (async generator of SSE lines)
-    async for chunk in stream_with_fallback(REALTIME_MODELS, messages):
+    async for chunk in stream_with_fallback(REASONING_MODELS, messages):
         yield chunk
 
 Fallback triggers (move to next model in list):
@@ -23,6 +23,7 @@ No-fallback errors (propagate immediately):
 
 import json
 import logging
+import time
 from typing import AsyncIterator
 
 import litellm
@@ -41,32 +42,61 @@ _RETRYABLE = (
 async def complete_with_fallback(
     models: list[str],
     messages: list[dict],
+    endpoint: str = "unknown",
     **kwargs,
 ) -> litellm.ModelResponse:
     """
     Try each model in order. Returns the first successful response.
     Raises HTTPException if all models are exhausted.
+
+    endpoint: logical layer name (perception/reasoning/learning) for logging.
     """
     last_err: Exception | None = None
 
     for model in models:
+        t0 = time.monotonic()
         try:
             log.debug("complete_with_fallback: trying %s", model)
-            return await litellm.acompletion(
+            response = await litellm.acompletion(
                 model=model,
                 messages=messages,
                 stream=False,
                 **kwargs,
             )
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            usage = response.usage or {}
+            log.info(
+                "[LLM] endpoint=%s model=%s tokens_in=%s tokens_out=%s latency_ms=%d ok=true",
+                endpoint,
+                response.model or model,
+                getattr(usage, "prompt_tokens", "?"),
+                getattr(usage, "completion_tokens", "?"),
+                latency_ms,
+            )
+            return response
         except litellm.BadRequestError as e:
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=%s model=%s latency_ms=%d ok=false error=BadRequestError",
+                endpoint, model, latency_ms,
+            )
             raise HTTPException(
                 status_code=400,
                 detail={"error": "bad_request", "model": model, "message": str(e)},
             )
         except _RETRYABLE as e:
-            log.warning("complete_with_fallback: %s failed (%s), trying next", model, type(e).__name__)
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=%s model=%s latency_ms=%d ok=false error=%s → fallback",
+                endpoint, model, latency_ms, type(e).__name__,
+            )
             last_err = e
         except Exception as e:
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=%s model=%s latency_ms=%d ok=false error=%s → fallback",
+                endpoint, model, latency_ms, type(e).__name__,
+            )
             log.exception("complete_with_fallback: unexpected error from %s", model)
             last_err = e
 
@@ -83,16 +113,20 @@ async def complete_with_fallback(
 async def stream_with_fallback(
     models: list[str],
     messages: list[dict],
+    endpoint: str = "unknown",
     **kwargs,
 ) -> AsyncIterator[str]:
     """
     Try each model in order for a streaming response.
     Yields SSE lines: `data: {"content": "..."}\\n\\n` and `data: [DONE]\\n\\n`.
     On retryable errors, emits a one-shot SSE error event and stops.
+
+    endpoint: logical layer name (perception/reasoning/learning) for logging.
     """
     last_err: Exception | None = None
 
     for model in models:
+        t0 = time.monotonic()
         try:
             log.debug("stream_with_fallback: trying %s", model)
             response = await litellm.acompletion(
@@ -101,19 +135,43 @@ async def stream_with_fallback(
                 stream=True,
                 **kwargs,
             )
+            token_count = 0
+            actual_model = model
             async for chunk in response:
                 delta = chunk.choices[0].delta.content or ""
                 if delta:
+                    token_count += 1
                     yield f"data: {json.dumps({'content': delta})}\n\n"
+                if hasattr(chunk, "model") and chunk.model:
+                    actual_model = chunk.model
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=%s model=%s tokens_out_chunks=%d latency_ms=%d ok=true (stream)",
+                endpoint, actual_model, token_count, latency_ms,
+            )
             yield "data: [DONE]\n\n"
             return  # success — stop iterating models
         except litellm.BadRequestError as e:
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=%s model=%s latency_ms=%d ok=false error=BadRequestError (stream)",
+                endpoint, model, latency_ms,
+            )
             yield f"data: {json.dumps({'error': 'bad_request', 'message': str(e)})}\n\n"
             return
         except _RETRYABLE as e:
-            log.warning("stream_with_fallback: %s failed (%s), trying next", model, type(e).__name__)
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=%s model=%s latency_ms=%d ok=false error=%s → fallback (stream)",
+                endpoint, model, latency_ms, type(e).__name__,
+            )
             last_err = e
         except Exception as e:
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=%s model=%s latency_ms=%d ok=false error=%s → fallback (stream)",
+                endpoint, model, latency_ms, type(e).__name__,
+            )
             log.exception("stream_with_fallback: unexpected error from %s", model)
             last_err = e
 

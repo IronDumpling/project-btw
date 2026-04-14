@@ -3,10 +3,19 @@
  *
  * Talks to the local Python backend at http://127.0.0.1:8765
  *
- * Three routing scenarios aligned with Intelligence Layer:
- *   chatRealtime   → Real-time Engine: Subtext Analyzer, Reply Generator  (latency < 1s)
- *   chatBackground → Background Engine: Compressor, Persona/Relationship  (quality first)
- *   analyzeScreenshot → Capture Layer: screenshot OCR + parsing           (vision models)
+ * Routing is governance-based, not speed-based:
+ *
+ *   analyzePerception  → Perception Layer (/v1/perception/analyze)
+ *                        Stateless, vision LLM, auto-triggered by hotkey.
+ *
+ *   chatReasoning      → Reasoning Layer (/v1/reasoning/chat)
+ *                        Stateless, low-latency, Subtext Analyzer + Reply Generator.
+ *                        Safe to auto-retry on failure.
+ *
+ *   chatLearning       → Learning Layer (/v1/learning/chat)
+ *                        STATEFUL — writes persona/relationship files.
+ *                        Requires explicit user confirmation (confirm: true).
+ *                        Use buildContext() from contextAssembler before calling.
  */
 
 import { listen } from "@tauri-apps/api/event";
@@ -108,31 +117,103 @@ async function stream(
   return full;
 }
 
-// ── Public API ─────────────────────────────────────────────────────────────────
+// ── Governance-based API (canonical) ──────────────────────────────────────────
 
-/** Real-time Engine — Subtext Analyzer and Reply Generator (low latency) */
-export const chatRealtime = (req: ChatRequest) => post("/v1/realtime/chat", req);
-export const streamRealtime = (req: ChatRequest, onToken: (t: string) => void) =>
-  stream("/v1/realtime/chat", req, onToken);
-
-/** Background Engine — Compressor, Persona / Relationship Updaters (quality first) */
-export const chatBackground = (req: ChatRequest) => post("/v1/background/chat", req);
-export const streamBackground = (req: ChatRequest, onToken: (t: string) => void) =>
-  stream("/v1/background/chat", req, onToken);
-
-/** Capture Layer — send screenshot to vision LLM for OCR + parsing */
-export async function analyzeScreenshot(
+/** Perception Layer — send screenshot to vision LLM. Stateless, auto-triggered. */
+export async function analyzePerception(
   screenshot: string,
   windowTitle: string,
 ): Promise<AnalyzeResponse> {
-  const res = await fetch(`${BASE_URL}/v1/capture/analyze`, {
+  const res = await fetch(`${BASE_URL}/v1/perception/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ screenshot, window_title: windowTitle }),
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Capture error ${res.status}: ${text}`);
+    throw new Error(`Perception error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+/** Reasoning Layer — Subtext Analyzer, Reply Generator. Stateless, safe to retry. */
+export const chatReasoning = (req: ChatRequest) => post("/v1/reasoning/chat", req);
+export const streamReasoning = (req: ChatRequest, onToken: (t: string) => void) =>
+  stream("/v1/reasoning/chat", req, onToken);
+
+/** Learning Layer — Persona/Relationship Updaters. STATEFUL — writes Storage.
+ *  Requires confirm: true in request metadata to enforce explicit user confirmation.
+ *  Always use buildContext() from contextAssembler.ts before calling. */
+export async function chatLearning(req: ChatRequest): Promise<ChatResponse> {
+  const body = { ...req, confirm: true };
+  const res = await fetch(`${BASE_URL}/v1/learning/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Learning error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+// ── Intelligence Layer calls ───────────────────────────────────────────────────
+
+export interface IntelligenceRequest {
+  contact_name: string;
+  messages: ExtractedMessage[];
+  user_context?: string;    // assembled by contextAssembler.buildContext()
+  contact_context?: string;
+}
+
+export interface SubtextResult {
+  subtext: string;
+  tone: string;
+  intent: string;
+  confidence: number;
+  reasoning: string;
+}
+
+export interface IntelligenceResponse {
+  subtext: SubtextResult;
+  model: string;
+}
+
+export interface PipelineResponse {
+  subtext: SubtextResult;
+  reply_drafts: Array<{ text: string; approach: string; note?: string }>;
+  model: string;
+}
+
+/** Run subtext analysis only (Reasoning Layer) */
+export async function analyzeIntelligence(
+  req: IntelligenceRequest,
+): Promise<IntelligenceResponse> {
+  const res = await fetch(`${BASE_URL}/v1/intelligence/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Intelligence analyze error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+/** Run subtext + reply drafts in sequence (Reasoning Layer) */
+export async function runIntelligencePipeline(
+  req: IntelligenceRequest,
+): Promise<PipelineResponse> {
+  const res = await fetch(`${BASE_URL}/v1/intelligence/pipeline`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Intelligence pipeline error ${res.status}: ${text}`);
   }
   return res.json();
 }

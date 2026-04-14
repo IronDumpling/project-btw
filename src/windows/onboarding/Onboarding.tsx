@@ -1,7 +1,7 @@
 import { useState, useRef, KeyboardEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
-import { chatBackground } from "../../lib/gateway";
+import { chatLearning } from "../../lib/gateway";
 import "./Onboarding.css";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -151,6 +151,8 @@ function TagInput({
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const SEPARATORS = /[,，、]/;
+
   const addTag = () => {
     const trimmed = input.trim();
     if (trimmed && !value.includes(trimmed)) {
@@ -160,11 +162,25 @@ function TagInput({
   };
 
   const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === "Enter" || SEPARATORS.test(e.key)) {
       e.preventDefault();
       addTag();
     } else if (e.key === "Backspace" && input === "" && value.length > 0) {
       onChange(value.slice(0, -1));
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const parts = raw.split(SEPARATORS);
+    if (parts.length > 1) {
+      const newTags = parts
+        .map((p) => p.trim())
+        .filter((p) => p && !value.includes(p));
+      if (newTags.length > 0) onChange([...value, ...newTags]);
+      setInput("");
+    } else {
+      setInput(raw);
     }
   };
 
@@ -192,14 +208,14 @@ function TagInput({
           ref={inputRef}
           className="ob-tag-text-input"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKey}
           onBlur={addTag}
           placeholder={value.length === 0 ? placeholder : ""}
           autoFocus={autoFocus}
         />
       </div>
-      <p className="ob-tag-hint">按 Enter 或逗号添加，Backspace 删除最后一个</p>
+      <p className="ob-tag-hint">按 Enter 或 、 添加，Backspace 删除最后一个</p>
     </>
   );
 }
@@ -557,16 +573,6 @@ function makeEmpty(): FormData {
   };
 }
 
-async function loadPersonaBuildPrompt(): Promise<string> {
-  // Read the prompt template from the backend
-  await fetch("http://127.0.0.1:8765/v1/background/chat", {
-    method: "HEAD",
-  }).catch(() => null);
-  // We embed the prompt inline since we can't read backend files from the frontend.
-  // The actual template is at backend/prompts/persona/user_builder.md + schema.md.
-  return PERSONA_BUILD_SYSTEM_PROMPT;
-}
-
 // Inline system prompt (mirrors backend/prompts/persona/user_builder.md + schema.md)
 const PERSONA_BUILD_SYSTEM_PROMPT = `You are a persona architect. Read structured self-report data from an onboarding questionnaire and produce a well-formed user/persona.md file.
 
@@ -638,11 +644,9 @@ export default function Onboarding() {
     setError(null);
 
     try {
-      await loadPersonaBuildPrompt(); // warm-up / no-op
-
       const userMessage = `Please generate a user/persona.md file based on this onboarding data:\n\n${JSON.stringify(form, null, 2)}`;
 
-      const response = await chatBackground({
+      const response = await chatLearning({
         messages: [
           { role: "system", content: PERSONA_BUILD_SYSTEM_PROMPT },
           { role: "user", content: userMessage },
@@ -657,7 +661,7 @@ export default function Onboarding() {
         content: personaContent,
       });
 
-      navigate("/");
+      navigate("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStep(TOTAL_STEPS); // go back to review so user can retry

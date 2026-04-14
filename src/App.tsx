@@ -22,6 +22,8 @@ export default function App() {
         });
         if (!content || content.trim().length === 0) {
           navigate("/onboarding");
+        } else {
+          navigate("/dashboard");
         }
       } catch {
         navigate("/onboarding");
@@ -39,21 +41,6 @@ export default function App() {
     );
   }
 
-  return (
-    <main className="app-shell">
-      <header className="app-header">
-        <span className="app-logo">project-btw</span>
-        <span className="app-tagline">Your relationship intelligence layer</span>
-      </header>
-
-      <section className="app-body">
-        <p className="app-placeholder">
-          主界面 — Contact Browser 和 Settings 将在 Phase 5 / 6 实现
-        </p>
-        <p className="app-hint">
-          按 <kbd>Ctrl+Shift+B</kbd> 触发截图分析，查看浮窗
-        </p>
-      </section>
-    </main>
-  );
+  // Should not render — navigate() fires before setChecking(false) resolves
+  return null;
 }

@@ -20,7 +20,32 @@ The shared 5-layer output structure is appended below (from `persona/schema.md`)
   - New conversation excerpt (for contact persona updates)
   - Updated onboarding fields (for user persona re-runs)
   - Correction note (e.g. "user said: 'I actually always use periods'")
+
+=== PATCH MODE ===
+[one of: "full" | "dynamic_only"]
 ```
+
+## Patch Modes
+
+### `dynamic_only` (default for incremental updates)
+
+**Hard Rules (Layer 0) and Identity (Layer 1) are READ-ONLY in this mode.**
+Do not modify, rewrite, or reorder any content under `## Hard Rules` or `## Identity`.
+Copy them verbatim from the existing persona.
+
+Only update the dynamic layers:
+- `## Communication Style` (Layer 2)
+- `## Emotional Pattern` (Layer 3)
+- `## Relationship Behavior` (Layer 4)
+
+This prevents stable behavioral constants from being overwritten by noisy
+single-conversation data — a single conversation is not sufficient evidence
+to revise who this person fundamentally is.
+
+### `full` (only for explicit user-initiated full rebuild)
+
+All layers may be updated. Use only when the user has explicitly requested
+a complete persona rebuild, not for routine incremental updates.
 
 ## Merge Rules
 

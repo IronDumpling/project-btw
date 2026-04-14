@@ -1,30 +1,25 @@
 """
-Capture Layer endpoints.
+Perception Layer router.
 
-  POST /v1/capture/analyze
-    Input : screenshot (base64 data-URL) + window_title
-    Output: platform, contact_name, extracted messages
+  POST /v1/perception/analyze
 
-Analysis is done in a single LLM vision call using CAPTURE_MODELS (ordered
-fallback list). The first model that succeeds wins. Vision-capable models only.
-
-Supported vision models (configure via CAPTURE_MODELS in .env):
-  gpt-4o                          (default primary,  needs OPENAI_API_KEY)
-  claude-3-5-sonnet-20241022      (fallback,          needs ANTHROPIC_API_KEY)
-  groq/llama-3.2-11b-vision-preview (budget option,  needs GROQ_API_KEY)
+Governance: stateless, idempotent, auto-triggered by hotkey.
+Vision-capable models only (image input required).
+Model list: PERCEPTION_MODELS (gpt-4o → claude-3-5-sonnet fallback).
 """
 
 import json
 import logging
+import time
 
 import litellm
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from config import CAPTURE_MODELS
+from config import PERCEPTION_MODELS
 
-log = logging.getLogger("backend.capture")
-router = APIRouter(prefix="/v1/capture", tags=["capture"])
+log = logging.getLogger("backend.perception")
+router = APIRouter(prefix="/v1/perception", tags=["perception"])
 
 _SYSTEM_PROMPT = """\
 You are a chat screenshot analyzer. Given a screenshot of a messaging app, extract:
@@ -75,8 +70,9 @@ class AnalyzeResponse(BaseModel):
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_screenshot(req: AnalyzeRequest):
     """
-    Capture Layer: send screenshot to vision LLM.
-    Tries CAPTURE_MODELS in order; falls back on auth/rate-limit/not-found errors.
+    Perception Layer: send screenshot to vision LLM.
+    Governance: stateless, idempotent, safe to auto-retry.
+    Tries PERCEPTION_MODELS in order; falls back on auth/rate-limit/not-found errors.
     """
     image_url = (
         req.screenshot
@@ -101,36 +97,61 @@ async def analyze_screenshot(req: AnalyzeRequest):
     ]
 
     last_err: Exception | None = None
-    used_model: str = CAPTURE_MODELS[0] if CAPTURE_MODELS else "unknown"
+    used_model: str = PERCEPTION_MODELS[0] if PERCEPTION_MODELS else "unknown"
+    response = None
 
-    for model in CAPTURE_MODELS:
+    for model in PERCEPTION_MODELS:
+        t0 = time.monotonic()
         try:
-            log.debug("capture/analyze: trying %s", model)
+            log.debug("perception/analyze: trying %s", model)
             response = await litellm.acompletion(
                 model=model,
                 messages=messages,
                 max_tokens=1024,
                 temperature=0.1,
             )
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            usage = response.usage or {}
+            log.info(
+                "[LLM] endpoint=perception model=%s tokens_in=%s tokens_out=%s latency_ms=%d ok=true",
+                response.model or model,
+                getattr(usage, "prompt_tokens", "?"),
+                getattr(usage, "completion_tokens", "?"),
+                latency_ms,
+            )
             used_model = model
             break
         except litellm.BadRequestError as e:
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=perception model=%s latency_ms=%d ok=false error=BadRequestError",
+                model, latency_ms,
+            )
             raise HTTPException(
                 status_code=400,
                 detail={"error": "bad_request", "model": model, "message": str(e)},
             )
         except _RETRYABLE as e:
-            log.warning("capture/analyze: %s failed (%s), trying next", model, type(e).__name__)
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=perception model=%s latency_ms=%d ok=false error=%s → fallback",
+                model, latency_ms, type(e).__name__,
+            )
             last_err = e
         except Exception as e:
-            log.exception("capture/analyze: unexpected error from %s", model)
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            log.info(
+                "[LLM] endpoint=perception model=%s latency_ms=%d ok=false error=%s → fallback",
+                model, latency_ms, type(e).__name__,
+            )
+            log.exception("perception/analyze: unexpected error from %s", model)
             last_err = e
     else:
         raise HTTPException(
             status_code=502,
             detail={
                 "error": "all_models_failed",
-                "models_tried": CAPTURE_MODELS,
+                "models_tried": PERCEPTION_MODELS,
                 "last_error": str(last_err),
             },
         )
@@ -147,7 +168,7 @@ async def analyze_screenshot(req: AnalyzeRequest):
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
-        log.warning("capture/analyze: %s returned non-JSON: %s", used_model, raw[:300])
+        log.warning("perception/analyze: %s returned non-JSON: %s", used_model, raw[:300])
         raise HTTPException(
             status_code=500,
             detail={"error": "parse_error", "message": f"Model returned non-JSON: {raw[:200]}"},
