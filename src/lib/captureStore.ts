@@ -11,6 +11,7 @@
  *   After a successful persona patch, reset the count to 0.
  */
 
+import { useEffect, useState } from "react";
 import type { AnalyzeResponse, CaptureEvent } from "./gateway";
 
 export const PERSONA_UPDATE_THRESHOLD = 3;
@@ -146,8 +147,6 @@ export const captureStore = {
 };
 
 /** React hook — re-renders the component whenever the store changes. */
-import { useEffect, useState } from "react";
-
 export function useCaptureStore(): CaptureState {
   const [state, setState] = useState<CaptureState>(captureStore.getState());
   useEffect(() => captureStore.subscribe(setState), []);
