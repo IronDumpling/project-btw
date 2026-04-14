@@ -16,9 +16,10 @@ import { buildContext } from "../../lib/contextAssembler";
 
 interface Props {
   onCollapse: () => void;
+  onClose: () => void;
 }
 
-export default function BubbleExpanded({ onCollapse }: Props) {
+export default function BubbleExpanded({ onCollapse, onClose }: Props) {
   const state = useCaptureStore();
 
   // Auto-run intelligence pipeline when we have a capture result but no reasoning yet
@@ -81,12 +82,17 @@ export default function BubbleExpanded({ onCollapse }: Props) {
 
   return (
     <div className="bubble-expanded">
-      {/* Header */}
+      {/* Header — drag region fills title area */}
       <div className="bubble-exp-header">
-        <span className="bubble-exp-title">project-btw</span>
-        <button className="bubble-exp-collapse" onClick={onCollapse} aria-label="collapse">
-          ↓
-        </button>
+        <span className="bubble-exp-title" data-tauri-drag-region>project-btw</span>
+        <div className="bubble-exp-actions">
+          <button className="bubble-exp-collapse" onClick={onCollapse} aria-label="collapse">
+            -
+          </button>
+          <button className="bubble-exp-close" onClick={onClose} aria-label="hide overlay">
+            ×
+          </button>
+        </div>
       </div>
 
       {/* Error state */}

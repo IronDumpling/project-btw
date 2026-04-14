@@ -61,13 +61,20 @@ export default function OverlayBubble() {
     await invoke("resize_overlay", COLLAPSED_SIZE);
   }
 
+  async function handleClose() {
+    setExpanded(false);
+    await invoke("resize_overlay", COLLAPSED_SIZE);
+    await invoke("hide_overlay");
+  }
+
   return expanded ? (
-    <BubbleExpanded onCollapse={handleCollapse} />
+    <BubbleExpanded onCollapse={handleCollapse} onClose={handleClose} />
   ) : (
     <BubbleCollapsed
       status={state.status}
       contactName={state.analyzeResult?.contact_name ?? null}
       onExpand={handleExpand}
+      onClose={handleClose}
     />
   );
 }
