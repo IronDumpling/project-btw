@@ -23,12 +23,8 @@ from config import (
     PERCEPTION_MODELS,
     REASONING_MODELS,
     LEARNING_MODELS,
-    # backward-compat aliases (old routers still work)
-    CAPTURE_MODELS,
-    REALTIME_MODELS,
-    BACKGROUND_MODELS,
 )
-from routers import background, capture, realtime, perception, reasoning, learning, intelligence
+from routers import perception, reasoning, learning, intelligence
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 log = logging.getLogger("backend")
@@ -46,7 +42,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="project-btw Backend",
-    description="Intelligence Layer + LLM Gateway — Capture / Real-time / Background routing",
+    description="Intelligence Layer + LLM Gateway — Perception / Reasoning / Learning routing",
     version="0.2.0",
     lifespan=lifespan,
 )
@@ -59,16 +55,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# New governance-based routers (canonical)
 app.include_router(perception.router)
 app.include_router(reasoning.router)
 app.include_router(learning.router)
 app.include_router(intelligence.router)
-
-# Legacy routers kept for backward compatibility
-app.include_router(capture.router)
-app.include_router(realtime.router)
-app.include_router(background.router)
 
 
 @app.exception_handler(litellm.AuthenticationError)

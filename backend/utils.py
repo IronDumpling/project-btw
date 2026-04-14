@@ -3,13 +3,13 @@ Shared LLM completion helpers with ordered model fallback.
 
 Usage:
     from utils import complete_with_fallback, stream_with_fallback
-    from config import REALTIME_MODELS
+    from config import REASONING_MODELS
 
     # Non-streaming
-    response = await complete_with_fallback(REALTIME_MODELS, messages, max_tokens=512)
+    response = await complete_with_fallback(REASONING_MODELS, messages, max_tokens=512)
 
     # Streaming (async generator of SSE lines)
-    async for chunk in stream_with_fallback(REALTIME_MODELS, messages):
+    async for chunk in stream_with_fallback(REASONING_MODELS, messages):
         yield chunk
 
 Fallback triggers (move to next model in list):

@@ -16,11 +16,6 @@
  *                        STATEFUL — writes persona/relationship files.
  *                        Requires explicit user confirmation (confirm: true).
  *                        Use buildContext() from contextAssembler before calling.
- *
- * Backward-compat aliases (deprecated, kept for Onboarding.tsx etc.):
- *   analyzeScreenshot → analyzePerception
- *   chatRealtime      → chatReasoning
- *   chatBackground    → chatLearning (note: confirm defaults to false there)
  */
 
 import { listen } from "@tauri-apps/api/event";
@@ -162,24 +157,6 @@ export async function chatLearning(req: ChatRequest): Promise<ChatResponse> {
   }
   return res.json();
 }
-
-// ── Backward-compat aliases (deprecated — use governance-based names above) ───
-
-/** @deprecated Use analyzePerception */
-export const analyzeScreenshot = analyzePerception;
-
-/** @deprecated Use chatReasoning */
-export const chatRealtime = (req: ChatRequest) => post("/v1/realtime/chat", req);
-/** @deprecated Use streamReasoning */
-export const streamRealtime = (req: ChatRequest, onToken: (t: string) => void) =>
-  stream("/v1/realtime/chat", req, onToken);
-
-/** @deprecated Use chatLearning — note: this calls the old /v1/background/chat
- *  which does NOT require confirm:true, so it bypasses the governance check.
- *  Migrate to chatLearning for all new persona-writing code. */
-export const chatBackground = (req: ChatRequest) => post("/v1/background/chat", req);
-export const streamBackground = (req: ChatRequest, onToken: (t: string) => void) =>
-  stream("/v1/background/chat", req, onToken);
 
 // ── Intelligence Layer calls ───────────────────────────────────────────────────
 

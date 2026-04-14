@@ -34,11 +34,6 @@ LEARNING_MODELS: list[str] = parse_models(
     "gpt-4.1,gpt-4o-mini,claude-3-5-sonnet-20241022,deepseek/deepseek-chat",
 )
 
-# ── Backward-compat aliases (old routers still import these) ──────────────────
-CAPTURE_MODELS = PERCEPTION_MODELS
-REALTIME_MODELS = REASONING_MODELS
-BACKGROUND_MODELS = LEARNING_MODELS
-
 # ── Context Budget (tokens per section injected into each LLM call) ───────────
 # Prevents context rot as persona files grow over time.
 # Priority order: Hard Rules (never cut) > Identity > Communication Style >

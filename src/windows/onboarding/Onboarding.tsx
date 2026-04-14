@@ -1,7 +1,7 @@
 import { useState, useRef, KeyboardEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
-import { chatBackground } from "../../lib/gateway";
+import { chatLearning } from "../../lib/gateway";
 import "./Onboarding.css";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -658,7 +658,7 @@ export default function Onboarding() {
 
       const userMessage = `Please generate a user/persona.md file based on this onboarding data:\n\n${JSON.stringify(form, null, 2)}`;
 
-      const response = await chatBackground({
+      const response = await chatLearning({
         messages: [
           { role: "system", content: PERSONA_BUILD_SYSTEM_PROMPT },
           { role: "user", content: userMessage },
