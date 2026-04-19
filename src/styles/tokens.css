@@ -11,6 +11,8 @@
   /* ── Surfaces ─────────────────────────────────────────── */
   --btw-bg:            #0f0f11;               /* page / window background */
   --btw-bg-raised:     rgba(255, 255, 255, 0.04);  /* cards, list items */
+  --btw-bg-card:       rgba(255, 255, 255, 0.04);  /* alias for bg-raised */
+  --btw-bg-hover:      rgba(255, 255, 255, 0.07);  /* hover state */
   --btw-bg-overlay:    rgba(18, 18, 20, 0.92);     /* frosted-glass overlay */
 
   /* ── Borders ──────────────────────────────────────────── */

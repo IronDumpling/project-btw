@@ -44,6 +44,7 @@ export interface CaptureState {
   personaPatchError: string | null;
 
   activeContactId: string | null;
+  captureCardVisible: boolean;
 }
 
 type Listener = (state: CaptureState) => void;
@@ -59,6 +60,7 @@ const initialState: CaptureState = {
   personaPatchStatus: "idle",
   personaPatchError: null,
   activeContactId: null,
+  captureCardVisible: false,
 };
 
 let _state: CaptureState = { ...initialState };
@@ -144,7 +146,12 @@ export const captureStore = {
   },
 
   reset() {
-    _state = { ...initialState, activeContactId: _state.activeContactId };
+    _state = { ...initialState, activeContactId: _state.activeContactId, captureCardVisible: true };
+    notify();
+  },
+
+  dismissCaptureCard() {
+    _state = { ..._state, captureCardVisible: false };
     notify();
   },
 

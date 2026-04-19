@@ -19,21 +19,22 @@
         "minWidth": 900,
         "minHeight": 600,
         "resizable": true,
-        "decorations": true
+        "decorations": true,
+        "visible": false
       },
       {
         "label": "overlay",
         "title": "project-btw overlay",
         "url": "overlay",
-        "width": 280,
-        "height": 76,
+        "width": 780,
+        "height": 560,
         "x": 20,
         "y": 100,
         "resizable": true,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
-        "visible": false,
+        "visible": true,
         "skipTaskbar": true
       }
     ],

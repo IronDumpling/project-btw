@@ -1,6 +1,7 @@
 import { useState, useRef, KeyboardEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { useNavigate } from "react-router-dom";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { emit } from "@tauri-apps/api/event";
 import { chatLearning } from "../../lib/gateway";
 import "./Onboarding.css";
 
@@ -618,7 +619,6 @@ Rules:
 5. Output raw Markdown only — no fences, no JSON`;
 
 export default function Onboarding() {
-  const navigate = useNavigate();
   const [step, setStep] = useState(0); // 0-3 = form steps, 4 = review, 5 = generating
   const [form, setForm] = useState<FormData>(makeEmpty());
   const [error, setError] = useState<string | null>(null);
@@ -661,7 +661,8 @@ export default function Onboarding() {
         content: personaContent,
       });
 
-      navigate("/dashboard");
+      await emit("btw-persona-updated", {});
+      await getCurrentWindow().hide();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStep(TOTAL_STEPS); // go back to review so user can retry

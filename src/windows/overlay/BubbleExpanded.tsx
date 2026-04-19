@@ -1,211 +1,167 @@
-/**
- * BubbleExpanded — 420×520 panel shown after capture analysis.
- *
- * Sections:
- * 1. Capture meta (platform, contact, confidence)
- * 2. Extracted messages
- * 3. Subtext analysis (auto-runs after capture)
- * 4. Reply drafts
- */
-
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Window } from "@tauri-apps/api/window";
-import { captureStore, useCaptureStore, PERSONA_UPDATE_THRESHOLD } from "../../lib/captureStore";
-import { runIntelligencePipeline } from "../../lib/gateway";
-import { buildContext } from "../../lib/contextAssembler";
+import { captureStore, useCaptureStore } from "../../lib/captureStore";
+import CaptureCard from "./CaptureCard";
+import HomeView from "./views/HomeView";
+import ContactDetailView from "./views/ContactDetailView";
+import CapturesView from "./views/CapturesView";
+import ProfileView from "./views/ProfileView";
+import SettingsView from "./views/SettingsView";
+
+type ActiveView = "home" | "contacts" | "captures" | "profile" | "settings";
+
+interface SidebarBtnProps {
+  icon: string;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+function SidebarBtn({ icon, label, active, onClick }: SidebarBtnProps) {
+  return (
+    <button
+      className={`bubble-sidebar-btn${active ? " active" : ""}`}
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+    >
+      {icon}
+    </button>
+  );
+}
+
+interface ContactEntry {
+  id: string;
+  name: string;
+  platform: string;
+}
+
+interface ContactsPanelProps {
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}
+
+function ContactsPanel({ selectedId, onSelect }: ContactsPanelProps) {
+  const [contacts, setContacts] = useState<ContactEntry[]>([]);
+  const state = useCaptureStore();
+
+  function loadContacts() {
+    invoke<ContactEntry[]>("list_contacts")
+      .then(setContacts)
+      .catch(() => setContacts([]));
+  }
+
+  useEffect(loadContacts, []);
+
+  // Reload when a new capture completes (new contact may have been created)
+  useEffect(() => {
+    if (state.status === "done") loadContacts();
+  }, [state.status === "done" ? state.analyzeResult?.contact_name : null]);
+
+  return (
+    <div className="bubble-contacts-panel">
+      <p className="bubble-contacts-panel-title">Contacts</p>
+      {contacts.length === 0 ? (
+        <p className="bubble-contacts-empty">No contacts yet</p>
+      ) : (
+        contacts.map((c) => (
+          <div
+            key={c.id}
+            className={`bubble-contact-entry${selectedId === c.id ? " selected" : ""}`}
+            onClick={() => onSelect(c.id)}
+          >
+            <span className="bubble-contact-entry-name">{c.name}</span>
+            {state.activeContactId === c.id && (
+              <span className="bubble-contact-entry-active">●</span>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 
 interface Props {
   onCollapse: () => void;
   onClose: () => void;
+  contactsCache: Record<string, string>;
 }
 
-export default function BubbleExpanded({ onCollapse, onClose }: Props) {
+export default function BubbleExpanded({ onCollapse, onClose, contactsCache }: Props) {
+  const [activeView, setActiveView] = useState<ActiveView>("home");
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const state = useCaptureStore();
-  const [contacts, setContacts] = useState<Array<{ id: string; name: string; platform: string }>>([]);
 
-  // Reload contacts after each successful capture (a new contact may have been created)
+  // When a capture comes in, auto-navigate to show capture card
   useEffect(() => {
-    invoke<Array<{ id: string; name: string; platform: string }>>("list_contacts")
-      .then(setContacts)
-      .catch(() => setContacts([]));
-  }, [state.status === "done" ? state.analyzeResult?.contact_name : null]);
+    if (state.captureCardVisible) {
+      // No view switch needed — capture card replaces main content
+    }
+  }, [state.captureCardVisible]);
 
-  async function openDashboard() {
-    const win = await Window.getByLabel("main");
-    if (win) { await win.show(); await win.setFocus(); }
+  // When contact becomes active (e.g., via capture), auto-select it in the contacts panel
+  useEffect(() => {
+    if (state.activeContactId && selectedContactId !== state.activeContactId) {
+      setSelectedContactId(state.activeContactId);
+    }
+  }, [state.activeContactId]);
+
+  function selectContact(id: string) {
+    setSelectedContactId(id);
+    captureStore.setActiveContact(id);
   }
 
-  // Auto-run intelligence pipeline when we have a capture result but no reasoning yet
-  useEffect(() => {
-    if (
-      state.status === "done" &&
-      state.analyzeResult &&
-      state.subtextResult === null &&
-      state.replyDrafts.length === 0 &&
-      state.lastCapture
-    ) {
-      runReasoning();
-    }
-  }, [state.status, state.analyzeResult]);
-
-  async function runReasoning() {
-    const result = state.analyzeResult;
-    if (!result) return;
-
-    captureStore.setStatus("reasoning");
-
-    try {
-      // Load persona files for context assembly
-      let userPersona = "";
-      let contactPersona = "";
-      try {
-        userPersona = await invoke<string>("read_file", { relativePath: "user/persona.md" });
-      } catch { /* no persona yet */ }
-
-      if (result.contact_name) {
-        try {
-          contactPersona = await invoke<string>("read_file", {
-            relativePath: `contacts/${result.contact_name}.md`,
-          });
-        } catch { /* no contact persona yet */ }
-      }
-
-      const { systemPrompt } = buildContext(userPersona, contactPersona || null, result.messages);
-
-      const pipeline = await runIntelligencePipeline({
-        contact_name: result.contact_name ?? "unknown",
-        messages: result.messages,
-        user_context: systemPrompt,
-      });
-
-      captureStore.setReasoningResult(
-        pipeline.subtext.subtext,
-        pipeline.reply_drafts.map((d) => d.text),
-      );
-    } catch (e) {
-      captureStore.setError(e instanceof Error ? e.message : String(e));
-    }
-  }
-
-  const result = state.analyzeResult;
-  const capture = state.lastCapture;
-  const contactName = result?.contact_name ?? null;
-  const updateCount = contactName ? (state.personaUpdateCount[contactName] ?? 0) : 0;
-  const showPersonaBadge = updateCount >= PERSONA_UPDATE_THRESHOLD;
+  const activeContactName = state.activeContactId
+    ? (contactsCache[state.activeContactId] ?? state.analyzeResult?.contact_name ?? state.activeContactId)
+    : null;
 
   return (
     <div className="bubble-expanded">
-      {/* Header — drag region fills title area */}
+      {/* Title bar */}
       <div className="bubble-exp-header">
         <span className="bubble-exp-title" data-tauri-drag-region>project-btw</span>
         <div className="bubble-exp-actions">
-          <button className="bubble-exp-collapse" onClick={onCollapse} aria-label="collapse">
-            -
-          </button>
-          <button className="bubble-exp-close" onClick={onClose} aria-label="hide overlay">
-            ×
-          </button>
+          <button className="bubble-exp-collapse" onClick={onCollapse} aria-label="collapse">-</button>
+          <button className="bubble-exp-close" onClick={onClose} aria-label="close">×</button>
         </div>
       </div>
 
-      {/* Active contact selector */}
-      <div className="bubble-contact-row">
-        <select
-          className="bubble-contact-selector"
-          value={state.activeContactId ?? ""}
-          onChange={(e) => captureStore.setActiveContact(e.target.value || null)}
-        >
-          <option value="">— auto-detect —</option>
-          {contacts.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <button
-          className="bubble-open-dashboard-btn"
-          onClick={openDashboard}
-          title="Open Dashboard"
-          aria-label="Open Dashboard"
-        >
-          ↗
-        </button>
-      </div>
+      {/* Body: sidebar + optional contacts panel + main content */}
+      <div className="bubble-body">
+        <nav className="bubble-sidebar">
+          <SidebarBtn icon="🏠" label="Home" active={activeView === "home"} onClick={() => setActiveView("home")} />
+          <SidebarBtn icon="👥" label="Contacts" active={activeView === "contacts"} onClick={() => setActiveView("contacts")} />
+          <SidebarBtn icon="📷" label="Captures" active={activeView === "captures"} onClick={() => setActiveView("captures")} />
+          <div className="bubble-sidebar-spacer" />
+          <SidebarBtn icon="👤" label="Profile" active={activeView === "profile"} onClick={() => setActiveView("profile")} />
+          <SidebarBtn icon="⚙️" label="Settings" active={activeView === "settings"} onClick={() => setActiveView("settings")} />
+        </nav>
 
-      {/* Error state */}
-      {state.status === "error" && (
-        <div className="bubble-exp-error">
-          <p className="bubble-exp-error-title">Analysis failed</p>
-          <p className="bubble-exp-error-detail">{state.error}</p>
-        </div>
-      )}
+        {activeView === "contacts" && (
+          <ContactsPanel selectedId={selectedContactId} onSelect={selectContact} />
+        )}
 
-      {/* Capture meta */}
-      {result && (
-        <div className="bubble-exp-meta">
-          <span className="bubble-exp-platform">{result.platform ?? "Unknown"}</span>
-          <span className="bubble-exp-contact">{contactName ?? "Unknown contact"}</span>
-          <span className="bubble-exp-confidence">
-            {Math.round(result.confidence * 100)}%
-          </span>
-          {capture?.window_title && (
-            <span className="bubble-exp-window">{capture.window_title}</span>
+        <div className="bubble-main-content">
+          {state.captureCardVisible ? (
+            <CaptureCard />
+          ) : (
+            <>
+              {activeView === "home" && (
+                <HomeView
+                  onGoToContacts={() => setActiveView("contacts")}
+                  activeContactName={activeContactName}
+                />
+              )}
+              {activeView === "contacts" && (
+                <ContactDetailView contactId={selectedContactId} />
+              )}
+              {activeView === "captures" && <CapturesView />}
+              {activeView === "profile" && <ProfileView />}
+              {activeView === "settings" && <SettingsView />}
+            </>
           )}
         </div>
-      )}
-
-      {/* Messages */}
-      {result && result.messages.length > 0 && (
-        <div className="bubble-exp-messages">
-          {result.messages.map((msg, i) => (
-            <div key={i} className={`bubble-msg bubble-msg-${msg.role}`}>
-              <span className="bubble-msg-role">
-                {msg.role === "user" ? "You" : contactName ?? "Contact"}
-              </span>
-              <span className="bubble-msg-text">{msg.text}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Reasoning results */}
-      {state.status === "reasoning" && (
-        <div className="bubble-exp-reasoning-loading">
-          <span className="bubble-spinner" /> Analyzing subtext…
-        </div>
-      )}
-
-      {state.subtextResult && (
-        <div className="bubble-exp-subtext">
-          <p className="bubble-exp-section-label">Subtext</p>
-          <p className="bubble-exp-subtext-text">{state.subtextResult}</p>
-        </div>
-      )}
-
-      {state.replyDrafts.length > 0 && (
-        <div className="bubble-exp-replies">
-          <p className="bubble-exp-section-label">Reply drafts</p>
-          {state.replyDrafts.map((draft, i) => (
-            <div key={i} className="bubble-exp-draft">
-              <p className="bubble-exp-draft-text">{draft}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Persona update badge */}
-      {showPersonaBadge && contactName && (
-        <div className="bubble-exp-persona-badge">
-          <span>
-            {updateCount} new captures for {contactName} — update persona?
-          </span>
-          <button
-            className="bubble-exp-persona-btn"
-            onClick={() => captureStore.requestPersonaPatch(contactName)}
-          >
-            Update
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

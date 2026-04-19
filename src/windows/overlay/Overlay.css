@@ -270,7 +270,7 @@
 .bubble-close:hover { color: var(--btw-text); }
 
 /* ═══════════════════════════════════════════════
-   Bubble — Expanded (420×520 panel)
+   Bubble — Expanded (780×560 unified panel)
    ═══════════════════════════════════════════════ */
 
 .bubble-expanded {
@@ -505,50 +505,400 @@
   white-space: nowrap;
 }
 
-/* ── Active contact selector row ────────────────────────────── */
+/* ── Expanded bubble body layout ─────────────────────────────── */
 
-.bubble-contact-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--btw-border-faint);
-  flex-shrink: 0;
-}
-
-.bubble-contact-selector {
+.bubble-body {
   flex: 1;
-  background: var(--btw-bg-card);
-  border: 1px solid var(--btw-border);
-  border-radius: var(--btw-radius-xs);
-  color: var(--btw-text);
-  font-size: 12px;
-  padding: 3px 6px;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-}
-.bubble-contact-selector:focus {
-  outline: none;
-  border-color: var(--btw-warning);
+  display: flex;
+  overflow: hidden;
 }
 
-.bubble-open-dashboard-btn {
-  width: 24px;
-  height: 24px;
+/* ── Sidebar nav ─────────────────────────────────────────────── */
+
+.bubble-sidebar {
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  border-right: 1px solid var(--btw-border-faint);
   flex-shrink: 0;
+  gap: 2px;
+}
+
+.bubble-sidebar-spacer { flex: 1; }
+
+.bubble-sidebar-btn {
+  width: 36px;
+  height: 36px;
   background: transparent;
-  border: 1px solid var(--btw-border-faint);
-  border-radius: var(--btw-radius-xs);
-  color: var(--btw-text-faint);
-  font-size: 13px;
+  border: none;
+  border-radius: var(--btw-radius-sm);
+  color: var(--btw-text-muted);
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   -webkit-app-region: no-drag;
-  transition: color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
-.bubble-open-dashboard-btn:hover {
+.bubble-sidebar-btn:hover {
+  background: var(--btw-bg-hover);
   color: var(--btw-text);
-  border-color: var(--btw-border);
 }
+.bubble-sidebar-btn.active {
+  background: color-mix(in srgb, var(--btw-accent) 15%, transparent);
+  color: var(--btw-accent);
+}
+
+/* ── Contacts secondary panel ─��──────────────────────────────── */
+
+.bubble-contacts-panel {
+  width: 160px;
+  border-right: 1px solid var(--btw-border-faint);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 8px 0;
+}
+
+.bubble-contacts-panel-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--btw-text-muted);
+  padding: 4px 12px 6px;
+}
+
+.bubble-contact-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+  -webkit-app-region: no-drag;
+}
+.bubble-contact-entry:hover { background: var(--btw-bg-hover); }
+.bubble-contact-entry.selected { background: color-mix(in srgb, var(--btw-accent) 12%, transparent); }
+
+.bubble-contact-entry-name {
+  font-size: 13px;
+  color: var(--btw-text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bubble-contact-entry-active {
+  font-size: 9px;
+  color: var(--btw-success);
+  flex-shrink: 0;
+}
+
+.bubble-contacts-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--btw-text-muted);
+}
+
+/* ── Main content area ───────────────────────────────────────── */
+
+.bubble-main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  min-width: 0;
+}
+
+/* ── Capture card ──���─────────────────────────────────────────── */
+
+.capture-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.capture-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.capture-card-platform {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--btw-text-muted);
+}
+.capture-card-contact {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--btw-text);
+}
+.capture-card-conf {
+  font-size: 11px;
+  color: var(--btw-text-muted);
+  margin-left: auto;
+}
+.capture-card-dismiss {
+  background: none;
+  border: none;
+  color: var(--btw-text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  -webkit-app-region: no-drag;
+}
+.capture-card-dismiss:hover { color: var(--btw-text); }
+
+.capture-card-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  padding: 10px 12px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.capture-msg { font-size: 13px; line-height: 1.5; }
+.capture-msg-role {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-right: 6px;
+  color: var(--btw-text-muted);
+}
+.capture-msg-user .capture-msg-role { color: var(--btw-accent); }
+
+.capture-card-analyzing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--btw-text-muted);
+}
+
+.capture-card-subtext {
+  background: color-mix(in srgb, var(--btw-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--btw-accent) 25%, transparent);
+  border-radius: var(--btw-radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--btw-text);
+  font-style: italic;
+}
+.capture-card-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--btw-text-muted);
+  margin-bottom: 6px;
+}
+
+.capture-card-drafts { display: flex; flex-direction: column; gap: 6px; }
+.capture-draft-btn {
+  text-align: left;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--btw-text);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: border-color 0.15s, background 0.15s;
+}
+.capture-draft-btn:hover {
+  border-color: var(--btw-border);
+  background: var(--btw-bg-hover);
+}
+
+/* ── Home view ─���─────────────────────────────────────────────── */
+
+.home-active-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.home-active-contact-label { color: var(--btw-text-muted); }
+.home-active-contact-name { font-weight: 600; color: var(--btw-text); flex: 1; }
+.home-change-btn {
+  background: none;
+  border: none;
+  color: var(--btw-accent);
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.home-last-capture {
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.home-capture-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--btw-text-muted);
+}
+.home-capture-contact { font-weight: 600; color: var(--btw-text); font-size: 14px; }
+.home-subtext { font-size: 13px; font-style: italic; color: var(--btw-text); margin-bottom: 8px; }
+.home-drafts { display: flex; flex-wrap: wrap; gap: 6px; }
+.home-draft-chip {
+  font-size: 12px;
+  padding: 4px 10px;
+  background: var(--btw-bg-hover);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: 20px;
+  color: var(--btw-text);
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.home-hint {
+  font-size: 12px;
+  color: var(--btw-text-muted);
+  text-align: center;
+  margin-top: 16px;
+}
+
+.home-setup-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--btw-warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--btw-warning) 40%, transparent);
+  border-radius: var(--btw-radius-sm);
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.home-setup-btn {
+  margin-left: auto;
+  padding: 4px 12px;
+  background: var(--btw-warning);
+  color: #000;
+  border: none;
+  border-radius: var(--btw-radius-xs);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+/* ── Contact detail view ─────────────────────────────────────── */
+
+.contact-detail-empty {
+  color: var(--btw-text-muted);
+  font-size: 13px;
+  text-align: center;
+  margin-top: 32px;
+}
+.contact-detail-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--btw-text);
+  margin-bottom: 4px;
+}
+.contact-detail-platform {
+  font-size: 12px;
+  color: var(--btw-text-muted);
+  margin-bottom: 14px;
+}
+.contact-detail-section {
+  margin-bottom: 14px;
+}
+.contact-detail-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--btw-text-muted);
+  margin-bottom: 5px;
+}
+.contact-detail-persona {
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: var(--btw-text);
+  line-height: 1.6;
+}
+.contact-detail-conv {
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: var(--btw-text-muted);
+  line-height: 1.6;
+  max-height: 160px;
+  overflow-y: auto;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  padding: 10px;
+}
+
+/* ── Profile / Settings / Captures views (simple) ───────────── */
+
+.view-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--btw-text);
+  margin-bottom: 14px;
+}
+.view-section {
+  margin-bottom: 16px;
+}
+.view-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--btw-text-muted);
+  margin-bottom: 6px;
+}
+.view-persona-text {
+  font-size: 12px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--btw-text);
+}
+.view-btn {
+  padding: 6px 14px;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border);
+  border-radius: var(--btw-radius-xs);
+  color: var(--btw-text);
+  font-size: 13px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: border-color 0.15s;
+}
+.view-btn:hover { border-color: var(--btw-accent); }
+.view-empty {
+  color: var(--btw-text-muted);
+  font-size: 13px;
+}
+.view-health-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.view-health-dot.ok { background: var(--btw-success); }
+.view-health-dot.err { background: var(--btw-error); }

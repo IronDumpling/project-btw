@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 
@@ -21,11 +22,13 @@ export default function App() {
           relativePath: "user/persona.md",
         });
         if (!content || content.trim().length === 0) {
+          // No persona — reveal the main window for onboarding
+          await getCurrentWindow().show();
           navigate("/onboarding");
-        } else {
-          navigate("/dashboard");
         }
+        // Persona exists — main window stays hidden; overlay is the UI
       } catch {
+        await getCurrentWindow().show();
         navigate("/onboarding");
       } finally {
         setChecking(false);
