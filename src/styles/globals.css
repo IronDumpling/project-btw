@@ -54,3 +54,194 @@ body {
 @keyframes btw-spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Main window — shared layout ─────────────────────────── */
+
+.main-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+
+.main-heading {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--btw-text);
+}
+
+.main-loading,
+.main-empty {
+  color: var(--btw-text-muted);
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--btw-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.back-btn:hover { color: var(--btw-text); }
+
+/* ── Contact list ─────────────────────────────────────────── */
+
+.contact-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.contact-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.contact-list-item:hover {
+  border-color: var(--btw-border);
+  background: var(--btw-bg-hover);
+}
+.contact-list-item--active {
+  border-left: 3px solid var(--btw-success);
+  padding-left: 13px;
+}
+
+.contact-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--btw-text);
+}
+.contact-platform {
+  font-size: 12px;
+  color: var(--btw-text-muted);
+}
+.contact-active-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--btw-success);
+  margin-left: auto;
+}
+
+/* ── Persona content ──────────────────────────────────────── */
+
+.persona-content {
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--btw-text);
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.persona-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--btw-warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--btw-warning) 40%, transparent);
+  border-radius: var(--btw-radius-sm);
+  font-size: 13px;
+  color: var(--btw-text);
+  margin-bottom: 16px;
+}
+.persona-update-btn {
+  padding: 4px 12px;
+  background: var(--btw-warning);
+  color: #000;
+  border: none;
+  border-radius: var(--btw-radius-xs);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.persona-update-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.persona-patch-error {
+  font-size: 12px;
+  color: var(--btw-error);
+  margin-top: 4px;
+}
+
+/* ── Dashboard ────────────────────────────────────────────── */
+
+.dashboard-card {
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.dashboard-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--btw-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+.dashboard-persona-section { margin-bottom: 10px; }
+.dashboard-persona-label {
+  font-size: 11px;
+  color: var(--btw-text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dashboard-persona-text {
+  font-size: 13px;
+  white-space: pre-wrap;
+  color: var(--btw-text);
+}
+.dashboard-subtext {
+  font-size: 13px;
+  color: var(--btw-text-muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+.dashboard-quick-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.dashboard-link-btn {
+  background: none;
+  border: 1px solid var(--btw-border);
+  color: var(--btw-accent);
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: var(--btw-radius-xs);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.dashboard-link-btn:hover { border-color: var(--btw-accent); }
+.dashboard-hint {
+  font-size: 12px;
+  color: var(--btw-text-muted);
+  margin-top: 4px;
+}

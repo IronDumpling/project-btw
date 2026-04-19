@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
 import NavSidebar from "../../components/NavSidebar";
+import { captureStore, useCaptureStore } from "../../lib/captureStore";
 
 interface ContactEntry {
   id: string;
@@ -11,6 +12,7 @@ interface ContactEntry {
 
 export default function ContactList() {
   const navigate = useNavigate();
+  const captureState = useCaptureStore();
   const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,11 +41,17 @@ export default function ContactList() {
           {contacts.map((c) => (
             <li
               key={c.id}
-              className="contact-list-item"
-              onClick={() => navigate(`/contacts/${encodeURIComponent(c.name)}`)}
+              className={`contact-list-item${captureState.activeContactId === c.id ? " contact-list-item--active" : ""}`}
+              onClick={() => {
+                captureStore.setActiveContact(c.id);
+                navigate(`/contacts/${encodeURIComponent(c.id)}`);
+              }}
             >
               <span className="contact-name">{c.name}</span>
               <span className="contact-platform">{c.platform}</span>
+              {captureState.activeContactId === c.id && (
+                <span className="contact-active-badge">● active</span>
+              )}
             </li>
           ))}
         </ul>

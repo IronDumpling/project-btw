@@ -504,3 +504,51 @@
   cursor: pointer;
   white-space: nowrap;
 }
+
+/* ── Active contact selector row ────────────────────────────── */
+
+.bubble-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--btw-border-faint);
+  flex-shrink: 0;
+}
+
+.bubble-contact-selector {
+  flex: 1;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border);
+  border-radius: var(--btw-radius-xs);
+  color: var(--btw-text);
+  font-size: 12px;
+  padding: 3px 6px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.bubble-contact-selector:focus {
+  outline: none;
+  border-color: var(--btw-warning);
+}
+
+.bubble-open-dashboard-btn {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-xs);
+  color: var(--btw-text-faint);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: no-drag;
+  transition: color 0.15s, border-color 0.15s;
+}
+.bubble-open-dashboard-btn:hover {
+  color: var(--btw-text);
+  border-color: var(--btw-border);
+}

@@ -6,11 +6,13 @@ Perception Layer router.
 Governance: stateless, idempotent, auto-triggered by hotkey.
 Vision-capable models only (image input required).
 Model list: PERCEPTION_MODELS (gpt-4o → claude-3-5-sonnet fallback).
+Prompt: backend/prompts/perception/analyze.md
 """
 
 import json
 import logging
 import time
+from pathlib import Path
 
 import litellm
 from fastapi import APIRouter, HTTPException
@@ -21,26 +23,10 @@ from config import PERCEPTION_MODELS
 log = logging.getLogger("backend.perception")
 router = APIRouter(prefix="/v1/perception", tags=["perception"])
 
-_SYSTEM_PROMPT = """\
-You are a chat screenshot analyzer. Given a screenshot of a messaging app, extract:
-1. platform  — the app name (WeChat, WhatsApp, Telegram, LINE, iMessage, Discord, Slack, etc.)
-2. contact_name — the person or group the user is chatting with
-3. messages — all visible chat messages in order
-
-Rules:
-- Label each message as "user" (the device owner) or "contact".
-- Include the full message text verbatim.
-- If you cannot identify a chat interface, return null for platform and contact_name and an empty messages list.
-- Respond ONLY with valid JSON — no markdown fences, no explanation.
-
-JSON schema:
-{
-  "platform": "string | null",
-  "contact_name": "string | null",
-  "messages": [{"role": "user"|"contact", "text": "string"}],
-  "confidence": 0.0-1.0
-}
-"""
+_PROMPT_PATH = Path(__file__).parent.parent / "prompts" / "perception" / "analyze.md"
+if not _PROMPT_PATH.exists():
+    raise FileNotFoundError(f"Perception prompt not found: {_PROMPT_PATH}")
+_SYSTEM_PROMPT = _PROMPT_PATH.read_text(encoding="utf-8")
 
 _RETRYABLE = (
     litellm.AuthenticationError,

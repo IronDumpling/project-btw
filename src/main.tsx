@@ -33,7 +33,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           {/* Main window pages (Phase 5) */}
           <Route path="/dashboard"        element={<Dashboard />} />
           <Route path="/contacts"         element={<ContactList />} />
-          <Route path="/contacts/:name"   element={<ContactDetail />} />
+          <Route path="/contacts/:id"     element={<ContactDetail />} />
           <Route path="/profile"          element={<UserProfile />} />
           <Route path="/capture"          element={<CapturePage />} />
           <Route path="/settings"         element={<Settings />} />

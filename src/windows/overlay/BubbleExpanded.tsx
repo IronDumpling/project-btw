@@ -8,8 +8,9 @@
  * 4. Reply drafts
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Window } from "@tauri-apps/api/window";
 import { captureStore, useCaptureStore, PERSONA_UPDATE_THRESHOLD } from "../../lib/captureStore";
 import { runIntelligencePipeline } from "../../lib/gateway";
 import { buildContext } from "../../lib/contextAssembler";
@@ -21,6 +22,19 @@ interface Props {
 
 export default function BubbleExpanded({ onCollapse, onClose }: Props) {
   const state = useCaptureStore();
+  const [contacts, setContacts] = useState<Array<{ id: string; name: string; platform: string }>>([]);
+
+  // Reload contacts after each successful capture (a new contact may have been created)
+  useEffect(() => {
+    invoke<Array<{ id: string; name: string; platform: string }>>("list_contacts")
+      .then(setContacts)
+      .catch(() => setContacts([]));
+  }, [state.status === "done" ? state.analyzeResult?.contact_name : null]);
+
+  async function openDashboard() {
+    const win = await Window.getByLabel("main");
+    if (win) { await win.show(); await win.setFocus(); }
+  }
 
   // Auto-run intelligence pipeline when we have a capture result but no reasoning yet
   useEffect(() => {
@@ -93,6 +107,28 @@ export default function BubbleExpanded({ onCollapse, onClose }: Props) {
             ×
           </button>
         </div>
+      </div>
+
+      {/* Active contact selector */}
+      <div className="bubble-contact-row">
+        <select
+          className="bubble-contact-selector"
+          value={state.activeContactId ?? ""}
+          onChange={(e) => captureStore.setActiveContact(e.target.value || null)}
+        >
+          <option value="">— auto-detect —</option>
+          {contacts.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        <button
+          className="bubble-open-dashboard-btn"
+          onClick={openDashboard}
+          title="Open Dashboard"
+          aria-label="Open Dashboard"
+        >
+          ↗
+        </button>
       </div>
 
       {/* Error state */}

@@ -42,6 +42,8 @@ export interface CaptureState {
   personaUpdateCount: Record<string, number>;
   personaPatchStatus: PersonaPatchStatus;
   personaPatchError: string | null;
+
+  activeContactId: string | null;
 }
 
 type Listener = (state: CaptureState) => void;
@@ -56,6 +58,7 @@ const initialState: CaptureState = {
   personaUpdateCount: {},
   personaPatchStatus: "idle",
   personaPatchError: null,
+  activeContactId: null,
 };
 
 let _state: CaptureState = { ...initialState };
@@ -80,8 +83,8 @@ export const captureStore = {
     notify();
   },
 
-  setCaptureResult(capture: CaptureEvent, result: AnalyzeResponse) {
-    const contactName = result.contact_name ?? "__unknown__";
+  setCaptureResult(capture: CaptureEvent, result: AnalyzeResponse, resolvedContactId?: string) {
+    const contactName = resolvedContactId ?? result.contact_name ?? "__unknown__";
     const prevCount = _state.personaUpdateCount[contactName] ?? 0;
     const newCount = prevCount + 1;
     _state = {
@@ -141,7 +144,12 @@ export const captureStore = {
   },
 
   reset() {
-    _state = { ...initialState };
+    _state = { ...initialState, activeContactId: _state.activeContactId };
+    notify();
+  },
+
+  setActiveContact(id: string | null) {
+    _state = { ..._state, activeContactId: id };
     notify();
   },
 };
