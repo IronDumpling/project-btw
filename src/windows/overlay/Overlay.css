@@ -252,6 +252,30 @@
   flex-shrink: 0;
 }
 
+.bubble-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.bubble-expand-btn {
+  width: 28px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--btw-text-faint);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.bubble-expand-btn:hover { color: var(--btw-text); }
+
 .bubble-close {
   width: 28px;
   height: 100%;
@@ -264,7 +288,6 @@
   color: var(--btw-text-faint);
   font-size: 16px;
   cursor: pointer;
-  -webkit-app-region: no-drag;
   transition: color 0.15s;
 }
 .bubble-close:hover { color: var(--btw-text); }

@@ -1,13 +1,3 @@
-/**
- * BubbleCollapsed — 280×76 capsule shown when overlay is idle or done.
- *
- * Shows:
- * - Idle: "Ctrl+Shift+B to capture" hint
- * - Analyzing/Reasoning: spinner + status text
- * - Done: contact name + tap to expand
- * - Error: error indicator + tap to expand
- */
-
 import type { CaptureStatus } from "../../lib/captureStore";
 
 interface Props {
@@ -20,17 +10,18 @@ interface Props {
 export default function BubbleCollapsed({ status, contactName, onExpand, onClose }: Props) {
   return (
     <div className="bubble-collapsed" data-status={status}>
-      {/* Drag region — fills the left portion of the capsule */}
+      {/* Drag + click-to-expand region */}
       <div
         className="bubble-drag"
         data-tauri-drag-region
-        onClick={status !== "idle" ? onExpand : undefined}
+        onClick={onExpand}
+        style={{ cursor: "pointer" }}
       >
         <div className="bubble-dot" data-status={status} />
 
         <div className="bubble-content">
           {status === "idle" && (
-            <span className="bubble-hint">Ctrl+Shift+B — capture</span>
+            <span className="bubble-hint">project-btw</span>
           )}
 
           {(status === "analyzing" || status === "reasoning") && (
@@ -44,24 +35,39 @@ export default function BubbleCollapsed({ status, contactName, onExpand, onClose
 
           {status === "done" && (
             <span className="bubble-contact">
-              {contactName ?? "Unknown"} · tap to expand
+              {contactName ?? "Unknown"}
             </span>
           )}
 
           {status === "error" && (
-            <span className="bubble-error-hint">Error · tap for details</span>
+            <span className="bubble-error-hint">Error · click for details</span>
           )}
         </div>
       </div>
 
-      {/* Close button — outside drag region so click doesn't drag */}
-      <button
-        className="bubble-close"
-        onClick={(e) => { e.stopPropagation(); onClose(); }}
-        aria-label="hide overlay"
-      >
-        ×
-      </button>
+      {/* Action buttons */}
+      <div className="bubble-actions">
+        <button
+          className="bubble-expand-btn"
+          onClick={(e) => { e.stopPropagation(); onExpand(); }}
+          aria-label="expand"
+          title="Open dashboard"
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 1.5H10.5V4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M10.5 1.5L6.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            <path d="M4.5 10.5H1.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1.5 10.5L5.5 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <button
+          className="bubble-close"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          aria-label="hide overlay"
+        >
+          ×
+        </button>
+      </div>
     </div>
   );
 }
