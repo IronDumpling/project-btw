@@ -54,6 +54,21 @@ pub async fn hide_overlay(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Show the main window and navigate it to /onboarding.
+/// Uses eval to fire a CustomEvent in the main window's JS context — this is
+/// reliable because eval runs synchronously within the target webview, bypassing
+/// Tauri's cross-window event routing which is unreliable in Tauri 2.
+#[tauri::command]
+pub async fn open_onboarding(app: AppHandle) -> Result<(), String> {
+    if let Some(main) = app.get_webview_window("main") {
+        main.show().map_err(|e| e.to_string())?;
+        main.set_focus().map_err(|e| e.to_string())?;
+        main.eval("window.dispatchEvent(new CustomEvent('btw-navigate-onboarding'))")
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 /// Resize the overlay window. Called by frontend when expanding/collapsing the bubble.
 /// Collapsed: 280×76, Expanded: 420×520
 #[tauri::command]

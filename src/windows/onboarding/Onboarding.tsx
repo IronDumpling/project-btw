@@ -1,7 +1,8 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { emit } from "@tauri-apps/api/event";
+import { useNavigate } from "react-router-dom";
 import { chatLearning } from "../../lib/gateway";
 import "./Onboarding.css";
 
@@ -16,6 +17,8 @@ interface IdentityData {
 }
 
 interface CommunicationData {
+  mode: "simple" | "complex";
+  materials: string;
   message_format: string;
   emoji_usage: string;
   punctuation_habits: string[];
@@ -320,61 +323,88 @@ function StepCommunication({
 
   return (
     <div className="ob-fields">
-      <div className="ob-notice">
-        <span className="ob-notice-icon">⚡</span>
-        <span>
-          即将支持：导入聊天记录或截图，让系统自动分析你的说话风格，比手动选择更准确。
-        </span>
+      <div className="ob-mode-toggle">
+        <button
+          className={`ob-mode-btn${data.mode === "simple" ? " active" : ""}`}
+          onClick={() => set("mode", "simple")}
+        >
+          简单填写
+        </button>
+        <button
+          className={`ob-mode-btn${data.mode === "complex" ? " active" : ""}`}
+          onClick={() => set("mode", "complex")}
+        >
+          ⚡ 提供材料
+        </button>
       </div>
 
-      <div className="ob-field">
-        <label className="ob-label">发消息的习惯</label>
-        <RadioGroup
-          options={["短句连发", "一整段说完", "视情况而定"]}
-          value={data.message_format}
-          onChange={(v) => set("message_format", v)}
-        />
-      </div>
+      {data.mode === "complex" ? (
+        <div className="ob-field">
+          <label className="ob-label">聊天记录 / 日记 / 自述</label>
+          <p className="ob-hint">
+            粘贴你和朋友的对话、日记片段或自我描述。系统会自动提取你的说话风格。
+          </p>
+          <textarea
+            className="ob-materials-input"
+            rows={10}
+            placeholder="粘贴内容…（建议 200 字以上效果更好）"
+            value={data.materials}
+            onChange={(e) => set("materials", e.target.value)}
+          />
+          <span className="ob-char-count">{data.materials.length} 字</span>
+        </div>
+      ) : (
+        <>
+          <div className="ob-field">
+            <label className="ob-label">发消息的习惯</label>
+            <RadioGroup
+              options={["短句连发", "一整段说完", "视情况而定"]}
+              value={data.message_format}
+              onChange={(v) => set("message_format", v)}
+            />
+          </div>
 
-      <div className="ob-field">
-        <label className="ob-label">emoji / 表情使用频率</label>
-        <RadioGroup
-          options={["经常用", "偶尔用", "基本不用"]}
-          value={data.emoji_usage}
-          onChange={(v) => set("emoji_usage", v)}
-        />
-      </div>
+          <div className="ob-field">
+            <label className="ob-label">emoji / 表情使用频率</label>
+            <RadioGroup
+              options={["经常用", "偶尔用", "基本不用"]}
+              value={data.emoji_usage}
+              onChange={(v) => set("emoji_usage", v)}
+            />
+          </div>
 
-      <div className="ob-field">
-        <label className="ob-label">
-          标点习惯 <span className="ob-label-opt">可多选</span>
-        </label>
-        <CheckGroup
-          options={["不用句号", "常用省略号…", "喜欢用～", "全角标点", "无特殊习惯"]}
-          value={data.punctuation_habits}
-          onChange={(v) => set("punctuation_habits", v)}
-        />
-      </div>
+          <div className="ob-field">
+            <label className="ob-label">
+              标点习惯 <span className="ob-label-opt">可多选</span>
+            </label>
+            <CheckGroup
+              options={["不用句号", "常用省略号…", "喜欢用～", "全角标点", "无特殊习惯"]}
+              value={data.punctuation_habits}
+              onChange={(v) => set("punctuation_habits", v)}
+            />
+          </div>
 
-      <div className="ob-field">
-        <label className="ob-label">回复速度倾向</label>
-        <RadioGroup
-          options={["秒回", "看心情", "不着急", "已读会回"]}
-          value={data.reply_speed}
-          onChange={(v) => set("reply_speed", v)}
-        />
-      </div>
+          <div className="ob-field">
+            <label className="ob-label">回复速度倾向</label>
+            <RadioGroup
+              options={["秒回", "看心情", "不着急", "已读不回"]}
+              value={data.reply_speed}
+              onChange={(v) => set("reply_speed", v)}
+            />
+          </div>
 
-      <div className="ob-field">
-        <label className="ob-label">
-          口头禅 / 高频词 <span className="ob-label-opt">可选</span>
-        </label>
-        <TagInput
-          value={data.catchphrases}
-          onChange={(v) => set("catchphrases", v)}
-          placeholder="哈哈哈、好吧、随便、你认真的吗…"
-        />
-      </div>
+          <div className="ob-field">
+            <label className="ob-label">
+              口头禅 / 高频词 <span className="ob-label-opt">可选</span>
+            </label>
+            <TagInput
+              value={data.catchphrases}
+              onChange={(v) => set("catchphrases", v)}
+              placeholder="哈哈哈、好吧、随便、你认真的吗…"
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -402,13 +432,13 @@ function StepEmotional({
 
       <div className="ob-field">
         <label className="ob-label">
-          爱的语言 <span className="ob-label-opt">最多选 2 项</span>
+          爱的语言 <span className="ob-label-opt">最多选 3 项</span>
         </label>
         <CheckGroup
           options={["肯定的话语", "精心的时刻", "身体接触", "服务行为", "接受礼物"]}
           value={data.love_languages}
           onChange={(v) => set("love_languages", v)}
-          max={2}
+          max={3}
         />
       </div>
 
@@ -525,11 +555,22 @@ function ReviewScreen({ form }: { form: FormData }) {
 
       <div className="ob-review-section">
         <p className="ob-review-section-title">说话风格</p>
-        <ReviewRow label="消息习惯" value={form.communication.message_format} />
-        <ReviewRow label="emoji" value={form.communication.emoji_usage} />
-        <ReviewRow label="标点" value={form.communication.punctuation_habits} />
-        <ReviewRow label="回复速度" value={form.communication.reply_speed} />
-        <ReviewRow label="口头禅" value={form.communication.catchphrases} />
+        {form.communication.mode === "complex" ? (
+          <div className="ob-review-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+            <span className="ob-review-key">提供的材料</span>
+            <span className="ob-review-val" style={{ textAlign: "left", fontSize: 12, whiteSpace: "pre-wrap", maxHeight: 120, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 6, WebkitBoxOrient: "vertical" }}>
+              {form.communication.materials.trim() || "（空）"}
+            </span>
+          </div>
+        ) : (
+          <>
+            <ReviewRow label="消息习惯" value={form.communication.message_format} />
+            <ReviewRow label="emoji" value={form.communication.emoji_usage} />
+            <ReviewRow label="标点" value={form.communication.punctuation_habits} />
+            <ReviewRow label="回复速度" value={form.communication.reply_speed} />
+            <ReviewRow label="口头禅" value={form.communication.catchphrases} />
+          </>
+        )}
       </div>
 
       <div className="ob-review-section">
@@ -563,6 +604,8 @@ function makeEmpty(): FormData {
   return {
     identity: { nicknames: [], age_range: "", occupation: "", mbti: "", zodiac: "" },
     communication: {
+      mode: "simple",
+      materials: "",
       message_format: "",
       emoji_usage: "",
       punctuation_habits: [],
@@ -594,7 +637,7 @@ Produce exactly these five sections:
 - A one-sentence summary of who this person is
 
 ## Communication Style
-- Message format, emoji usage, punctuation habits, reply speed, catchphrases
+- Message format, emoji usage, punctuation habits, reply speed, catchphrases — mark each as [self-reported] or [from materials]
 - What each reveals about personality
 - An overall style note (1-2 sentences)
 
@@ -616,19 +659,94 @@ Rules:
 2. Every field must be actionable for a reply generator
 3. Hard Rules must be direct imperatives
 4. Total 400-600 words. Dense, not padded.
-5. Output raw Markdown only — no fences, no JSON`;
+5. Output raw Markdown only — no fences, no JSON
+6. MBTI "不知道" → omit MBTI. Zodiac "跳过" → omit zodiac.
+7. Mark form-derived fields as [self-reported]; fields extracted from materials as [from materials].
+
+## When Materials Are Provided
+
+If the input contains "Additional materials:", extract communication patterns from them.
+Materials take priority over form selections for Communication Style (Layer 2).
+
+Extract from materials:
+- Catchphrases: actual repeated phrases observed (minimum 2 required if materials are long enough)
+- Message format: burst vs. long-form, observed across messages
+- Emoji usage: frequency and specific emojis actually used
+- Punctuation signature: what their punctuation choices reveal
+- Reply energy: engagement level observable from patterns
+
+Fields not derivable from materials (attachment style, love languages, conflict response)
+come from the form data and remain marked [self-reported].`;
+
+const USER_MEMORY_BUILD_PROMPT = `You are building a factual self-knowledge file for the user. Read the onboarding data and produce user/memory.md.
+
+Output raw Markdown only — no code fences, no explanation. Start directly with the heading.
+
+Structure:
+
+# User Memory
+> Source: onboarding self-report[+ materials analysis if applicable].
+
+## Core Identity
+Name/aliases (all nicknames), age range, occupation, MBTI, zodiac — from form. Omit fields the user skipped.
+
+## Values & Philosophy
+Valued traits in others, dealbreakers, love languages — from form.
+
+## Communication Facts
+Factual communication habits — from form or materials if provided. Include specific catchphrases and emoji actually observed in materials.
+
+## Relationship Role
+Role in relationships, how they initiate or respond — from form.
+
+## Life Context
+ONLY if materials contain life context clues (locations, relationships, events, names). Otherwise write exactly: [insufficient data — to be enriched over time]
+
+Rules:
+1. Write in first person ("I prefer...", "My nickname is...")
+2. Only write facts derivable from the input — no invention
+3. When materials are provided, prefer material evidence over form selections for Communication Facts
+4. Keep each section under 60 words
+5. Output raw Markdown only`;
 
 export default function Onboarding() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(0); // 0-3 = form steps, 4 = review, 5 = generating
   const [form, setForm] = useState<FormData>(makeEmpty());
+  const [formReady, setFormReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const isReview = step === TOTAL_STEPS;
   const isGenerating = step === TOTAL_STEPS + 1;
 
+  // Pre-populate form from saved user/form.json (edit mode)
+  useEffect(() => {
+    invoke<string>("read_file", { relativePath: "user/form.json" })
+      .then((raw) => {
+        if (raw?.trim()) {
+          const saved = JSON.parse(raw) as Partial<FormData>;
+          const empty = makeEmpty();
+          setForm({
+            identity: { ...empty.identity, ...(saved.identity ?? {}) },
+            communication: { ...empty.communication, ...(saved.communication ?? {}) },
+            emotional: { ...empty.emotional, ...(saved.emotional ?? {}) },
+            relationship: { ...empty.relationship, ...(saved.relationship ?? {}) },
+          });
+        }
+      })
+      .catch(() => {}) // no saved form — start fresh
+      .finally(() => setFormReady(true));
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [step]);
+
   const canProceed = () => {
     if (step === 0) return form.identity.nicknames.length > 0;
-    return true; // all other steps are optional
+    if (step === 1 && form.communication.mode === "complex") {
+      return form.communication.materials.trim().length > 0;
+    }
+    return true;
   };
 
   const handleNext = () => {
@@ -644,24 +762,42 @@ export default function Onboarding() {
     setError(null);
 
     try {
-      const userMessage = `Please generate a user/persona.md file based on this onboarding data:\n\n${JSON.stringify(form, null, 2)}`;
+      const hasMaterials =
+        form.communication.mode === "complex" &&
+        form.communication.materials.trim().length > 0;
+      const materialsSection = hasMaterials
+        ? `\n\nAdditional materials (chat logs / diary / notes):\n${form.communication.materials.trim()}`
+        : "";
 
-      const response = await chatLearning({
-        messages: [
-          { role: "system", content: PERSONA_BUILD_SYSTEM_PROMPT },
-          { role: "user", content: userMessage },
-        ],
-        temperature: 0.4,
-        max_tokens: 1200,
-      });
+      const userMessage = `Generate based on this onboarding data:\n${JSON.stringify(form, null, 2)}${materialsSection}`;
 
-      const personaContent = response.content.trim();
-      await invoke("write_file", {
-        relativePath: "user/persona.md",
-        content: personaContent,
-      });
+      const [personaRes, memoryRes] = await Promise.all([
+        chatLearning({
+          messages: [
+            { role: "system", content: PERSONA_BUILD_SYSTEM_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.4,
+          max_tokens: 1200,
+        }),
+        chatLearning({
+          messages: [
+            { role: "system", content: USER_MEMORY_BUILD_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.3,
+          max_tokens: 800,
+        }),
+      ]);
+
+      await Promise.all([
+        invoke("write_file", { relativePath: "user/persona.md", content: personaRes.content.trim() }),
+        invoke("write_file", { relativePath: "user/memory.md", content: memoryRes.content.trim() }),
+        invoke("write_file", { relativePath: "user/form.json", content: JSON.stringify(form, null, 2) }),
+      ]);
 
       await emit("btw-persona-updated", {});
+      navigate("/"); // return to App route so next open_onboarding works cleanly
       await getCurrentWindow().hide();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -670,6 +806,16 @@ export default function Onboarding() {
   };
 
   const meta = isReview || isGenerating ? null : STEP_META[step];
+
+  if (!formReady) {
+    return (
+      <div className="ob-root">
+        <div className="ob-generating">
+          <div className="ob-spinner" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="ob-root">

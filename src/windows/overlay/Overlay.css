@@ -925,3 +925,78 @@
 }
 .view-health-dot.ok { background: var(--btw-success); }
 .view-health-dot.err { background: var(--btw-error); }
+
+/* Contact action toolbar */
+.contact-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--btw-border-subtle);
+}
+.contact-action-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: var(--btw-radius);
+  border: 1px solid var(--btw-border-subtle);
+  background: transparent;
+  color: var(--btw-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.contact-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.contact-action-btn.danger {
+  border-color: var(--btw-error);
+  color: var(--btw-error);
+}
+.contact-action-btn.danger:hover {
+  background: color-mix(in srgb, var(--btw-error) 12%, transparent);
+}
+
+/* Contacts panel header with add button */
+.bubble-contacts-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
+.contacts-add-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--btw-text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.contacts-add-icon-btn:hover { color: var(--btw-text); }
+
+/* Add contact inline form */
+.contacts-add-form {
+  display: flex;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--btw-border-subtle);
+}
+.contacts-add-input {
+  flex: 1;
+  background: var(--btw-bg-overlay);
+  border: 1px solid var(--btw-border-subtle);
+  border-radius: var(--btw-radius);
+  color: var(--btw-text);
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.contacts-add-btn {
+  padding: 4px 8px;
+  border-radius: var(--btw-radius);
+  border: 1px solid var(--btw-border-subtle);
+  background: transparent;
+  color: var(--btw-text);
+  font-size: 12px;
+  cursor: pointer;
+}

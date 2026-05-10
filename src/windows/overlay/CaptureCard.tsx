@@ -30,20 +30,37 @@ export default function CaptureCard() {
 
     try {
       let userPersona = "";
+      let userMemory = "";
       let contactPersona = "";
+      let contactMemory = "";
 
       try {
         userPersona = await invoke<string>("read_file", { relativePath: "user/persona.md" });
       } catch { /* no persona yet */ }
 
-      if (result.contact_name) {
-        const contactId = result.contact_name.trim().replace(/[/\\:*?"<>|\x00\s]+/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 64) || "unknown";
+      try {
+        userMemory = await invoke<string>("read_file", { relativePath: "user/memory.md" });
+      } catch { /* no user memory yet */ }
+
+      const contactId = captureStore.getState().activeContactId;
+      if (contactId) {
         try {
           contactPersona = await invoke<string>("read_file", { relativePath: `contacts/${contactId}/persona.md` });
         } catch { /* no contact persona yet */ }
+        try {
+          contactMemory = await invoke<string>("read_file", { relativePath: `contacts/${contactId}/memory.md` });
+        } catch { /* no contact memory yet */ }
       }
 
-      const { systemPrompt } = buildContext(userPersona, contactPersona || null, result.messages);
+      const { systemPrompt } = buildContext(
+        userPersona,
+        contactPersona || null,
+        result.messages,
+        undefined,
+        contactMemory || null,
+        null,
+        userMemory || null,
+      );
 
       const pipeline = await runIntelligencePipeline({
         contact_name: result.contact_name ?? "unknown",

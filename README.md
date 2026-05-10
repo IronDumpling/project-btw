@@ -1,4 +1,4 @@
-# project-btw
+# Between: A Relationship Agent
 
 Tauri 2 + React + TypeScript（Vite）桌面应用 + Python FastAPI 后端。
 
@@ -97,7 +97,7 @@ backend/
 
 ```bash
 cd backend && python main.py   # 端口 8765
-npm run tauri dev              # 另一个终端
+cd src-tauri && npm run tauri dev              # 另一个终端
 ```
 
 首次启动（无 `user/persona.md`）→ 自动进入四步问卷 → 填完提交 → 生成 persona → 跳转 `/dashboard`。
@@ -146,10 +146,16 @@ Settings 页面会展示相同信息。
 
 ## 接下来要做什么
 
-1. **端到端冒烟测试**：按上面验证清单跑一遍，确认 Vite 无报错、Overlay 能正常展开、Intelligence pipeline 返回真实 subtext
-2. **Relationship Updater 接入**（Phase 6 尾）：`relationship/updater.md` prompt 已有，在 `ContactDetail` 增加「Update Relationship」触发按钮，接入 Learning 层
-3. **对话历史压缩**：`conversation/updater.md` 已有，在 `BubbleExpanded` 或 `ContactDetail` 中累积多次截图证据后调用，防止 per-contact evidence 无限增长
-4. **联系人 Persona 初始化**：首次在 `ContactDetail` 打开一个新联系人时，调用 `relationship/builder.md` 自动生成初始 persona（当前是空文件）
+### 优先：Contact Identification（逻辑待改进）
+当前 Perception Layer 从截图提取的 `contact_name` 不够健壮：
+- 同一联系人在不同平台 / 聊天窗口可能产生多个不同 name，导致 `contacts/` 下出现重复文件
+- 缺少跨截图的 contact 去重 / 匹配机制
+- `ContactDetail` 打开新联系人时，`relationship/builder.md` 的自动初始化尚未接入
+
+### 优先：Persona Merge / Update（逻辑待改进）
+- `merge.md` 的触发时机和证据积累逻辑不完善
+- per-contact evidence 无限增长问题：`conversation/updater.md` 已有但未接入，多次截图后 context 会膨胀
+- `relationship/updater.md` prompt 已有，但 `ContactDetail` 的「Update Relationship」UI 触发逻辑尚未接入 Learning 层
 
 ---
 
@@ -174,7 +180,7 @@ cp .env.example .env            # 填入真实 API key
 cd backend && python main.py
 
 # 终端 2
-npm run tauri dev
+cd src-tauri && npm run tauri dev
 ```
 
 ## 常用命令
@@ -189,3 +195,15 @@ npm run tauri dev
 ## 推荐 IDE
 
 VS Code + [Tauri 插件](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+
+---
+
+## License
+
+Copyright (c) 2026 IronDumpling. All rights reserved.
+
+本项目采用 **Source-Available** 许可证。源码可查阅，但未经版权所有者书面授权，禁止使用、复制、修改、分发或部署。
+
+授权合作请联系：irondumpling010@gmail.com
+
+详见 [LICENSE](./LICENSE)。

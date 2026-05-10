@@ -1,14 +1,14 @@
 # Contact Persona Builder
 
-You are a persona architect. Read a `conversation.md` file (compressed conversation
-history + recent raw messages between the user and a specific contact) and produce
-a well-formed `contacts/<id>/persona.md` file.
+You are a persona architect. Read a `conversation.md` file (accumulated conversation
+history between the user and a specific contact) and produce two documents:
+a **Contact Memory** file and a **Contact Persona** file.
 
-This file represents the **contact** (the other person) — it guides the Real-time Engine on:
-- How to interpret the contact's messages ("when they go quiet, it usually means X")
-- What to expect ("they never initiate deep conversations but respond well when led")
+These files work together to guide the Real-time Engine:
+- **Memory** answers: what do we know about this person as facts?
+- **Persona** answers: how does this person behave in communication?
 
-The shared 5-layer output structure is appended below (from `persona/schema.md`).
+The shared 5-layer persona structure is appended below (from `persona/schema.md`).
 
 ---
 
@@ -16,14 +16,12 @@ The shared 5-layer output structure is appended below (from `persona/schema.md`)
 
 You will receive:
 
-1. **conversation.md** — the contact's conversation file, structured as:
+1. **conversation.md** — the contact's conversation file, structured as accumulated
+   timestamped blocks:
    ```
-   ## Compressed History
-   [LLM-generated summary of past interactions]
-
-   ## Recent Messages（最近50条）
-   [2026-04-05 14:32] 对方: ...
-   [2026-04-05 14:33] 我: ...
+   --- [timestamp] ---
+   [You] message text
+   [Contact] message text
    ```
 
 2. **contact_id** — the contact's internal identifier (slug).
@@ -41,6 +39,18 @@ from behavioral evidence** in the conversation. Be explicit about your evidence:
 If evidence is insufficient for a field, write `[insufficient data — n messages analyzed]`
 rather than fabricating.
 
+## Chinese Messaging Context Rules
+
+When analyzing conversations in Chinese (especially WeChat/QQ):
+
+- **Multi-message bursts** (3+ messages sent before receiving a reply) signal engagement and comfort. A single-character reply ("嗯", "哦", "好") signals disengagement or discomfort.
+- **😊 in WeChat context** often signals polite dismissal, passive tension, or face-saving — not genuine happiness. Read it as punctuation, not emotion.
+- **哈哈 / 哈哈哈** can indicate genuine amusement or deflection depending on length and context. Longer strings suggest real laughter; a single "哈哈" often deflects.
+- **Question answered with a question** = topic avoidance. Direct statement in response to a question = genuine engagement.
+- **Reply latency signals**: in Chinese chat culture, "seen and not replied" (已读不回) carries stronger signal than in Western contexts — it often indicates deliberate distance, not just busyness.
+- **Punctuation absence**: Chinese casual chat commonly omits periods. Sudden use of periods can indicate formality, anger, or careful wording.
+- **Ellipsis (……)**: signals unfinished thought, hesitation, or intentional ambiguity — not just trailing off.
+
 ## Semantic Notes for Contact Persona
 
 - **Hard Rules** here are **behavioral constants**: things this contact always or
@@ -49,31 +59,46 @@ rather than fabricating.
   Example: "Never initiates conflict directly — always uses humor to deflect tension"
 
 - **Identity** is inferred, not self-reported. Use language patterns, topics, and
-  context clues. Confidence should be noted where identity fields are uncertain.
+  context clues. Mark uncertain identity fields with `[inferred, low confidence]`.
 
 - **Communication Style** is extracted directly from their message patterns:
   average message length, emoji frequency, response latency cues (if timestamps available),
-  recurring phrases.
+  recurring phrases. Minimum 2 catchphrases required if evidence supports them.
 
 - **Coaching note** in Relationship Behavior should tell the reply generator:
   "Given how this person operates, the user's best approach is..."
 
-## Output Heading
+## Output Format
 
-Start the document with:
+Produce two documents separated by `=== MEMORY ===` and `=== PERSONA ===` markers.
+Output nothing before `=== MEMORY ===`.
 
 ```
+=== MEMORY ===
+# Contact Memory: {contact_id}
+> Source: conversation analysis ({n} messages). Factual observations only — no behavioral inference.
+
+## Facts
+- [YYYY-MM-DD] [fact explicitly stated by contact]
+
+## Key Events
+- [YYYY-MM-DD] [event the contact mentioned]
+
+## Preferences
+- [YYYY-MM-DD] [preference explicitly expressed by contact]
+
+=== PERSONA ===
 # Contact Persona: {contact_id}
 > Source: conversation analysis ({n} messages). Used by Real-time Engine for subtext and reply calibration.
+
+[5-layer persona document per schema.md]
 ```
 
----
+**Memory rules**:
+- Only include what the contact **explicitly stated** — not what you infer about them
+- If the contact never mentioned their job, do not list it under Facts
+- Omit sections that have no entries (e.g., omit `## Preferences` if none were expressed)
 
-## Phase 4 Implementation Note
-
-This prompt is a placeholder — it will be wired up when the Contact Persona Updater
-is implemented in Phase 4. At that point:
-
-- The backend will call `POST /v1/background/chat` with this prompt + `conversation.md`
-- The result will be saved to `contacts/<id>/persona.md` via Tauri `write_file`
-- Incremental updates will use `persona/merge.md` instead of this builder
+**Persona rules**:
+- Behavioral inference only — do not repeat facts from Memory in the Persona
+- Follow all Quality Rules from `persona/schema.md`

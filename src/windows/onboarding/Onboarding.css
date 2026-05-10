@@ -391,6 +391,71 @@
   margin-top: 1px;
 }
 
+/* ── Mode toggle (Step 2) ── */
+
+.ob-mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ob-mode-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: var(--btw-radius);
+  border: 1px solid var(--btw-border-subtle);
+  background: transparent;
+  color: var(--btw-text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color var(--btw-ease-fast), color var(--btw-ease-fast), background var(--btw-ease-fast);
+}
+
+.ob-mode-btn.active {
+  border-color: var(--btw-accent);
+  color: var(--btw-text);
+  background: color-mix(in srgb, var(--btw-accent) 10%, transparent);
+}
+
+.ob-materials-input {
+  width: 100%;
+  background: var(--btw-bg-card, var(--btw-bg-raised));
+  border: 1px solid var(--btw-border-subtle);
+  border-radius: var(--btw-radius);
+  color: var(--btw-text);
+  font-size: 13px;
+  padding: 10px 12px;
+  resize: vertical;
+  font-family: var(--btw-font);
+  line-height: 1.6;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color var(--btw-ease-fast);
+}
+
+.ob-materials-input:focus {
+  border-color: var(--btw-accent);
+}
+
+.ob-materials-input::placeholder {
+  color: var(--btw-text-ghost);
+}
+
+.ob-char-count {
+  font-size: 11px;
+  color: var(--btw-text-muted);
+  text-align: right;
+  display: block;
+  margin-top: 4px;
+}
+
+.ob-hint {
+  font-size: 12px;
+  color: var(--btw-text-muted);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
 /* ── Review screen ── */
 
 .ob-review {

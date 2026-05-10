@@ -58,6 +58,30 @@ You will receive a JSON object from the onboarding form:
 - **Coaching note** in Relationship Behavior is the most important field:
   write it as a direct instruction to the reply generator.
 
+## MBTI / Zodiac Behavioral Defaults
+
+When `mbti` or `zodiac` is provided, use the table below to fill in fields that the user did **not** self-report. Always mark these as `[default from MBTI: INFJ]` or `[default from zodiac: 天蝎]` so incremental updates can override them with observed evidence.
+
+**Do not apply defaults if the user's self-reported answers contradict them.**
+
+### MBTI Defaults
+
+| Type | Conflict response default | Initiative default | Vulnerability threshold |
+|------|--------------------------|-------------------|------------------------|
+| INFJ | 冷暴力 → 延迟理性沟通 | 被动方，等对方先开口 | 高（需要深度信任） |
+| INFP | 转移话题或沉默 | 被动方，但情绪投入高 | 中高（情感连接后快速开放）|
+| INTJ | 直接说，但语气克制 | 主动方（目标导向）| 高（几乎不主动示弱）|
+| ENFJ | 主动修复，倾向于先道歉 | 主动方，频繁发起 | 中（表面开放，深层保守）|
+
+### Zodiac Defaults
+
+| Zodiac | Boundary strength | Conflict repair timing | Reciprocity tracking |
+|--------|-----------------|----------------------|---------------------|
+| 天蝎 | High（边界清晰，突破代价高）| 长，需要对方先认错 | 强，长期记账 |
+| 天秤 | Medium（回避冲突直到临界点）| 中，倾向于主动和解但会延迟 | 中，在意公平但不常明说 |
+| 巨蟹 | Medium-low（情感依附优先于边界）| 短，主动修复，凌晨高发 | 中，以情感投入计量 |
+| 摩羯 | High（明确的时间和精力边界）| 长，理性先行，不轻易开口 | 强，以实际行动而非话语计量 |
+
 ## Output Heading
 
 Start the document with:

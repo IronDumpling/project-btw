@@ -36,6 +36,14 @@ export default function App() {
     })();
   }, [navigate]);
 
+  // Listen for overlay-triggered onboarding request (Edit / Rebuild Profile).
+  // Uses a browser CustomEvent fired via Rust eval — reliable within the same webview.
+  useEffect(() => {
+    const handler = () => navigate("/onboarding");
+    window.addEventListener("btw-navigate-onboarding", handler);
+    return () => window.removeEventListener("btw-navigate-onboarding", handler);
+  }, [navigate]);
+
   if (checking) {
     return (
       <div className="app-loading">
