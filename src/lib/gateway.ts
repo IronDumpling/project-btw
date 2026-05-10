@@ -218,6 +218,96 @@ export async function runIntelligencePipeline(
   return res.json();
 }
 
+// ── Persona update pipeline ───────────────────────────────────────────────────
+
+export interface CompressedEvidence {
+  observed_patterns: string[];
+  emotional_signals: string[];
+  style_observations: string[];
+  relationship_indicators: string[];
+  memory_updates: string[];
+  confidence: number;
+  model: string;
+}
+
+export interface PersonaMergeResponse {
+  persona: string;
+  model: string;
+}
+
+export interface RelationshipState {
+  state: string;
+  state_changed: boolean;
+  previous_state: string | null;
+  evidence: string[];
+  trajectory: string;
+  coaching_note: string;
+  confidence: number;
+  updated_date: string;
+  model: string;
+}
+
+/** Compress conversation.md content → structured evidence JSON (Reasoning Layer) */
+export async function compressConversation(
+  conversation: string,
+  contactId: string = "",
+): Promise<CompressedEvidence> {
+  const res = await fetch(`${BASE_URL}/v1/intelligence/compress`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ conversation, contact_id: contactId }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Compress error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+/** Merge existing persona with compressed evidence (Learning Layer models) */
+export async function mergePersona(
+  existingPersona: string,
+  compressedEvidence: CompressedEvidence,
+  patchMode: "dynamic_only" | "full" = "dynamic_only",
+): Promise<PersonaMergeResponse> {
+  const res = await fetch(`${BASE_URL}/v1/intelligence/merge`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      existing_persona: existingPersona,
+      compressed_evidence: compressedEvidence,
+      patch_mode: patchMode,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Merge error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
+/** Update relationship state from compressed evidence (Reasoning Layer) */
+export async function updateRelationship(
+  currentState: string,
+  compressedEvidence: CompressedEvidence,
+  personaSummary: string,
+): Promise<RelationshipState> {
+  const res = await fetch(`${BASE_URL}/v1/intelligence/relationship`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      current_state: currentState,
+      compressed_evidence: compressedEvidence,
+      persona_summary: personaSummary,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Relationship update error ${res.status}: ${text}`);
+  }
+  return res.json();
+}
+
 /** Listen for Ctrl+Shift+B capture events emitted by Rust */
 export function onCaptureTriggered(
   callback: (event: CaptureEvent) => void,

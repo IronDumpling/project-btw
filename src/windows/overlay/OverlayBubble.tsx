@@ -35,10 +35,10 @@ export default function OverlayBubble() {
   // Load contacts cache on mount
   useEffect(refreshContactsCache, []);
 
-  // Refresh contacts cache when a capture completes (new contact may have been added)
+  // Refresh contacts cache when activeContactId changes (fired after ensureContact succeeds).
   useEffect(() => {
-    if (state.status === "done") refreshContactsCache();
-  }, [state.status === "done" ? state.analyzeResult?.contact_name : null]);
+    if (state.activeContactId) refreshContactsCache();
+  }, [state.activeContactId]);
 
   // Listen for persona updated event (after onboarding completes)
   useEffect(() => {
@@ -52,9 +52,12 @@ export default function OverlayBubble() {
 
   // Capture event handler
   useEffect(() => {
+    let cancelled = false;
     let unlisten: (() => void) | undefined;
 
     onCaptureTriggered(async (event) => {
+      if (cancelled) return;
+
       captureStore.reset(); // captureCardVisible = true
       captureStore.setStatus("analyzing");
 
@@ -66,7 +69,7 @@ export default function OverlayBubble() {
       try {
         const result = await analyzePerception(event.screenshot, event.window_title);
 
-        const contactId = resolveContactId(
+        const contactId = await resolveContactId(
           result.contact_name,
           captureStore.getState().activeContactId,
         );
@@ -76,7 +79,9 @@ export default function OverlayBubble() {
         if (contactId) {
           try {
             await ensureContact(contactId, result.contact_name ?? contactId, result.platform ?? "unknown");
-            await appendConversation(contactId, result.messages, new Date(event.timestamp).toLocaleString());
+            await appendConversation(contactId, result.messages, new Date(Number(event.timestamp) * 1000).toLocaleString());
+            // Set active contact AFTER folder is created so ContactsPanel reloads correctly.
+            captureStore.setActiveContact(contactId);
             refreshContactsCache();
           } catch (registryErr) {
             console.warn("contactRegistry:", registryErr);
@@ -86,9 +91,14 @@ export default function OverlayBubble() {
         captureStore.setError(e instanceof Error ? e.message : String(e));
         if (!expandedRef.current) await handleExpand();
       }
-    }).then((fn) => { unlisten = fn; });
+    }).then((fn) => {
+      if (cancelled) { fn(); } else { unlisten = fn; }
+    });
 
-    return () => unlisten?.();
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
   }, []);
 
   async function handleExpand() {

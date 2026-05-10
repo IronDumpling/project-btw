@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { captureStore, useCaptureStore } from "../../lib/captureStore";
+import { ensureContact, sanitizeToId } from "../../lib/contactRegistry";
 import CaptureCard from "./CaptureCard";
-import HomeView from "./views/HomeView";
+import CaptureView from "./views/CapturesView";
 import ContactDetailView from "./views/ContactDetailView";
-import CapturesView from "./views/CapturesView";
 import ProfileView from "./views/ProfileView";
 import SettingsView from "./views/SettingsView";
 
-type ActiveView = "home" | "contacts" | "captures" | "profile" | "settings";
+type ActiveView = "captures" | "contacts" | "profile" | "settings";
 
 interface SidebarBtnProps {
   icon: string;
@@ -39,10 +39,14 @@ interface ContactEntry {
 interface ContactsPanelProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
+  reloadKey?: number;
 }
 
-function ContactsPanel({ selectedId, onSelect }: ContactsPanelProps) {
+function ContactsPanel({ selectedId, onSelect, reloadKey }: ContactsPanelProps) {
   const [contacts, setContacts] = useState<ContactEntry[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const state = useCaptureStore();
 
   function loadContacts() {
@@ -53,14 +57,54 @@ function ContactsPanel({ selectedId, onSelect }: ContactsPanelProps) {
 
   useEffect(loadContacts, []);
 
-  // Reload when a new capture completes (new contact may have been created)
   useEffect(() => {
-    if (state.status === "done") loadContacts();
-  }, [state.status === "done" ? state.analyzeResult?.contact_name : null]);
+    if (state.activeContactId) loadContacts();
+  }, [state.activeContactId]);
+
+  useEffect(() => {
+    if (reloadKey !== undefined && reloadKey > 0) loadContacts();
+  }, [reloadKey]);
+
+  useEffect(() => {
+    if (adding) inputRef.current?.focus();
+  }, [adding]);
+
+  async function confirmAdd() {
+    const name = newName.trim();
+    if (!name) return;
+    const id = sanitizeToId(name);
+    await ensureContact(id, name, "manual");
+    loadContacts();
+    setAdding(false);
+    setNewName("");
+    onSelect(id);
+  }
+
+  function cancelAdd() {
+    setAdding(false);
+    setNewName("");
+  }
 
   return (
     <div className="bubble-contacts-panel">
-      <p className="bubble-contacts-panel-title">Contacts</p>
+      <div className="bubble-contacts-panel-header">
+        <p className="bubble-contacts-panel-title">Contacts</p>
+        <button className="contacts-add-icon-btn" onClick={() => setAdding(true)} title="Add contact">+</button>
+      </div>
+      {adding && (
+        <div className="contacts-add-form">
+          <input
+            ref={inputRef}
+            className="contacts-add-input"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") confirmAdd(); if (e.key === "Escape") cancelAdd(); }}
+            placeholder="Contact name"
+          />
+          <button className="contacts-add-btn" onClick={confirmAdd}>✓</button>
+          <button className="contacts-add-btn" onClick={cancelAdd}>✕</button>
+        </div>
+      )}
       {contacts.length === 0 ? (
         <p className="bubble-contacts-empty">No contacts yet</p>
       ) : (
@@ -88,14 +132,15 @@ interface Props {
 }
 
 export default function BubbleExpanded({ onCollapse, onClose, contactsCache }: Props) {
-  const [activeView, setActiveView] = useState<ActiveView>("home");
+  const [activeView, setActiveView] = useState<ActiveView>("captures");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [contactsReloadKey, setContactsReloadKey] = useState(0);
   const state = useCaptureStore();
 
-  // When a capture comes in, auto-navigate to show capture card
+  // When a capture comes in, auto-navigate to Capture tab
   useEffect(() => {
     if (state.captureCardVisible) {
-      // No view switch needed — capture card replaces main content
+      setActiveView("captures");
     }
   }, [state.captureCardVisible]);
 
@@ -129,36 +174,37 @@ export default function BubbleExpanded({ onCollapse, onClose, contactsCache }: P
       {/* Body: sidebar + optional contacts panel + main content */}
       <div className="bubble-body">
         <nav className="bubble-sidebar">
-          <SidebarBtn icon="🏠" label="Home" active={activeView === "home"} onClick={() => setActiveView("home")} />
+          <SidebarBtn icon="📷" label="Capture" active={activeView === "captures"} onClick={() => setActiveView("captures")} />
           <SidebarBtn icon="👥" label="Contacts" active={activeView === "contacts"} onClick={() => setActiveView("contacts")} />
-          <SidebarBtn icon="📷" label="Captures" active={activeView === "captures"} onClick={() => setActiveView("captures")} />
           <div className="bubble-sidebar-spacer" />
           <SidebarBtn icon="👤" label="Profile" active={activeView === "profile"} onClick={() => setActiveView("profile")} />
           <SidebarBtn icon="⚙️" label="Settings" active={activeView === "settings"} onClick={() => setActiveView("settings")} />
         </nav>
 
         {activeView === "contacts" && (
-          <ContactsPanel selectedId={selectedContactId} onSelect={selectContact} />
+          <ContactsPanel selectedId={selectedContactId} onSelect={selectContact} reloadKey={contactsReloadKey} />
         )}
 
         <div className="bubble-main-content">
-          {state.captureCardVisible ? (
-            <CaptureCard />
+          {activeView === "captures" ? (
+            state.captureCardVisible ? (
+              <CaptureCard />
+            ) : (
+              <CaptureView
+                onGoToContacts={() => setActiveView("contacts")}
+                activeContactName={activeContactName}
+              />
+            )
+          ) : activeView === "contacts" ? (
+            <ContactDetailView contactId={selectedContactId} onDeleted={() => {
+              setSelectedContactId(null);
+              captureStore.setActiveContact(null);
+              setContactsReloadKey((k) => k + 1);
+            }} />
+          ) : activeView === "profile" ? (
+            <ProfileView />
           ) : (
-            <>
-              {activeView === "home" && (
-                <HomeView
-                  onGoToContacts={() => setActiveView("contacts")}
-                  activeContactName={activeContactName}
-                />
-              )}
-              {activeView === "contacts" && (
-                <ContactDetailView contactId={selectedContactId} />
-              )}
-              {activeView === "captures" && <CapturesView />}
-              {activeView === "profile" && <ProfileView />}
-              {activeView === "settings" && <SettingsView />}
-            </>
+            <SettingsView />
           )}
         </div>
       </div>

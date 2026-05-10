@@ -22,12 +22,14 @@ import type { ExtractedMessage } from "./gateway";
 
 export interface ContextBudgets {
   userCore: number;
+  contactMemory: number;
   contactRelevant: number;
   conversationMax: number;
 }
 
 const DEFAULT_BUDGETS: ContextBudgets = {
   userCore: 500,
+  contactMemory: 150,
   contactRelevant: 300,
   conversationMax: 1000,
 };
@@ -96,13 +98,20 @@ function formatMessages(messages: ExtractedMessage[]): string {
  * Assemble a context-budgeted system prompt for reasoning/learning calls.
  *
  * Injection priority:
- *   Hard Rules (never cut) > Identity > Communication Style > Contact > Conversation
+ *   Hard Rules (never cut) > Identity > Comm Style > Contact Memory > Contact Persona > Conversation
+ *
+ * contactMemory: raw content of contacts/{id}/memory.md — factual observations.
+ *   Most recent entries (bottom of file) are preserved when truncated.
+ * relationshipState: raw JSON content of contacts/{id}/relationship.json.
+ *   Only the coaching_note field is injected, appended to Contact Profile.
  */
 export function buildContext(
   userPersonaFull: string,
   contactPersona: string | null,
   messages: ExtractedMessage[],
   budgets: Partial<ContextBudgets> = {},
+  contactMemory: string | null = null,
+  relationshipState: string | null = null,
 ): AssembledContext {
   const b: ContextBudgets = { ...DEFAULT_BUDGETS, ...budgets };
 
@@ -122,6 +131,22 @@ export function buildContext(
   const userCore = truncateToTokens(userCoreRaw, b.userCore);
   const userTokensUsed = estimateTokens(userCore);
 
+  // ── Contact memory (recent factual observations, max contactMemory tokens) ─
+  // memory.md is append-only so most recent entries are at the bottom.
+  // Truncate from the top to preserve recent entries.
+  let memory = "";
+  if (contactMemory && contactMemory.trim()) {
+    const lines = contactMemory.trim().split("\n");
+    const maxChars = b.contactMemory * 4;
+    let kept = "";
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const candidate = lines[i] + "\n" + kept;
+      if (candidate.length > maxChars) break;
+      kept = candidate;
+    }
+    memory = kept.trim();
+  }
+
   // ── Contact persona (relevant sections, max contactRelevant tokens) ───────
   let contact = "";
   let contactTokensUsed = 0;
@@ -133,6 +158,19 @@ export function buildContext(
       .filter(Boolean)
       .join("\n\n");
     contact = truncateToTokens(contactRaw, b.contactRelevant);
+
+    // Append relationship coaching note if available
+    if (relationshipState) {
+      try {
+        const rs = JSON.parse(relationshipState) as { coaching_note?: string };
+        if (rs.coaching_note) {
+          contact += `\n\nCurrent dynamic: ${rs.coaching_note}`;
+        }
+      } catch {
+        // Non-fatal — malformed relationship.json is ignored
+      }
+    }
+
     contactTokensUsed = estimateTokens(contact);
   }
 
@@ -146,6 +184,9 @@ export function buildContext(
 
   if (userCore) {
     parts.push("## User Profile\n" + userCore);
+  }
+  if (memory) {
+    parts.push("## Contact Memory\n" + memory);
   }
   if (contact) {
     parts.push("## Contact Profile\n" + contact);

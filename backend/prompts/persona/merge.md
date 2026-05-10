@@ -75,13 +75,3 @@ The full document, ready to overwrite the existing file.
 Use the same heading format as the input document (`# User Persona` or
 `# Contact Persona: {id}`).
 
----
-
-## Phase 4 Implementation Note
-
-This prompt is a placeholder — it will be wired up when incremental persona
-updates are implemented in Phase 4. It serves both:
-- **User Persona Updater**: triggered when new screenshots reveal the user's
-  own messaging patterns (the "user" side of captured conversations)
-- **Contact Persona Updater**: triggered after each new conversation batch
-  is processed by the Conversation Compressor
