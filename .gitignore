@@ -17,6 +17,9 @@ dist-ssr
 .cursor/*
 .claude
 .claude/*
+.superpowers
+.superpowers/
+.superpowers/*
 .vscode
 .vscode/*
 !.vscode/extensions.json
