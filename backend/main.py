@@ -24,7 +24,7 @@ from config import (
     REASONING_MODELS,
     LEARNING_MODELS,
 )
-from routers import perception, reasoning, learning, intelligence
+from routers import perception, reasoning, learning, intelligence, mobile
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 log = logging.getLogger("backend")
@@ -59,6 +59,7 @@ app.include_router(perception.router)
 app.include_router(reasoning.router)
 app.include_router(learning.router)
 app.include_router(intelligence.router)
+app.include_router(mobile.router)
 
 
 @app.exception_handler(litellm.AuthenticationError)

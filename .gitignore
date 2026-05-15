@@ -38,6 +38,9 @@ backend/__pycache__/
 *.pyo
 .venv/
 backend/.venv/
+backend/.venv*/
 
 # Gateway secrets — never commit real API keys
 backend/.env
+backend/*.db
+backend/*.db-*

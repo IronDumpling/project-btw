@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { isTauriRuntime, readAppFile } from "../../../lib/browserStorage";
 import { useCaptureStore } from "../../../lib/captureStore";
 
 interface Props {
@@ -12,13 +13,17 @@ export default function CaptureView({ onGoToContacts, activeContactName }: Props
   const [hasPersona, setHasPersona] = useState(true);
 
   useEffect(() => {
-    invoke<string>("read_file", { relativePath: "user/persona.md" })
+    readAppFile("user/persona.md")
       .then((c) => setHasPersona(!!c && c.trim().length > 0))
       .catch(() => setHasPersona(false));
   }, []);
 
   async function openSetup() {
-    await invoke("open_onboarding");
+    if (isTauriRuntime()) {
+      await invoke("open_onboarding");
+    } else {
+      window.location.href = "/onboarding";
+    }
   }
 
   const result = state.analyzeResult;

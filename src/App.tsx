@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useNavigate } from "react-router-dom";
+import { isTauriRuntime, readAppFile, showCurrentWindow } from "./lib/browserStorage";
 import "./App.css";
 
 /**
@@ -18,17 +17,17 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const content: string = await invoke("read_file", {
-          relativePath: "user/persona.md",
-        });
+        const content: string = await readAppFile("user/persona.md");
         if (!content || content.trim().length === 0) {
           // No persona — reveal the main window for onboarding
-          await getCurrentWindow().show();
+          await showCurrentWindow();
           navigate("/onboarding");
+        } else if (!isTauriRuntime()) {
+          navigate("/overlay");
         }
         // Persona exists — main window stays hidden; overlay is the UI
       } catch {
-        await getCurrentWindow().show();
+        await showCurrentWindow();
         navigate("/onboarding");
       } finally {
         setChecking(false);

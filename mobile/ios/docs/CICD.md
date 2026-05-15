@@ -1,0 +1,65 @@
+# Mobile iOS CI/CD
+
+The repo uses a least-effort GitHub Actions setup:
+
+- automatic validation on changes to `mobile/ios/**`
+- manual EAS iOS builds through `workflow_dispatch`
+
+## Required GitHub Secret
+
+Add this repository secret:
+
+```text
+EXPO_TOKEN
+```
+
+Create it from your Expo account settings. The token is used only by the manual EAS build job.
+
+## Automatic Validation
+
+The validation job runs on pull requests and pushes touching:
+
+- `mobile/ios/**`
+- `.github/workflows/mobile-ios.yml`
+
+It runs:
+
+```bash
+npm ci
+npm run typecheck
+npm run doctor
+```
+
+## Manual iOS Build
+
+In GitHub Actions, run `Mobile iOS` manually and choose one profile:
+
+- `preview`: internal test build using `Between Test`
+- `production`: production build using `Between`
+
+The workflow runs:
+
+```bash
+eas build --platform ios --profile preview --non-interactive --no-wait
+```
+
+or:
+
+```bash
+eas build --platform ios --profile production --non-interactive --no-wait
+```
+
+`--no-wait` keeps CI short. Build progress is tracked in the Expo dashboard.
+
+## First EAS Build Notes
+
+The first iOS build may ask the Expo account owner to configure Apple credentials. Keep that interaction in EAS/Expo rather than storing Apple credentials in GitHub at this stage.
+
+## Production Submission
+
+App Store submission is intentionally not automated yet. Add `eas submit` only after:
+
+- bundle id is final
+- App Store Connect app exists
+- privacy copy and review notes are ready
+- screenshot import consent flow is finalized

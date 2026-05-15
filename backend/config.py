@@ -46,3 +46,5 @@ CONTEXT_BUDGETS: dict[str, int] = {
 
 BACKEND_HOST: str = os.getenv("BACKEND_HOST", "127.0.0.1")
 BACKEND_PORT: int = int(os.getenv("BACKEND_PORT", "8765"))
+SUPABASE_URL: str = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
