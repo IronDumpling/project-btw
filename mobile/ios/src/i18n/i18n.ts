@@ -1,0 +1,596 @@
+import type { OnboardingForm, ReplyStyle } from "@/api/types";
+import { useAppStore } from "@/state/useAppStore";
+
+export type Locale = "en" | "zh-CN";
+type Params = Record<string, string | number>;
+
+const zh = {
+  appName: "Between",
+  commonBack: "返回",
+  commonContinue: "继续",
+  commonSave: "保存",
+  commonCancel: "取消",
+  commonError: "出错了",
+  commonLoading: "请稍候",
+  commonChooseOne: "请选择",
+  commonEmpty: "未填写",
+  commonSelectedCount: "最多选 {max} 项（已选 {count}）",
+  commonTagHint: "按回车、逗号或顿号添加；点标签删除",
+  commonChars: "{count} 字",
+  commonFallbackDash: "—",
+  errorAuthFailed: "认证失败",
+  errorGeneratePersona: "无法生成 Persona",
+  errorUpdateProfile: "无法更新资料",
+  errorDeletePersona: "无法删除 Persona",
+  errorResendVerification: "无法重新发送验证邮件",
+  errorVerificationIncomplete: "验证还没有完成",
+  errorVerifyLink: "无法验证这个链接",
+  errorSupabaseMissing: "Supabase 尚未配置。请添加 EXPO_PUBLIC_SUPABASE_URL 和 EXPO_PUBLIC_SUPABASE_ANON_KEY。",
+  loginTitle: "Between",
+  loginBody: "使用已验证邮箱登录，继续管理你的私人关系画像。",
+  loginLogin: "登录",
+  loginRegister: "注册",
+  loginEmail: "邮箱",
+  loginPassword: "密码",
+  loginDisplayName: "显示名称",
+  loginCreateAccount: "创建账号",
+  verifyTitle: "验证邮箱",
+  verifyBody: "打开 Supabase 确认邮件，然后回到这里继续。",
+  verifyResend: "重新发送邮件",
+  verifySent: "验证邮件已发送。",
+  authCallbackTitle: "正在完成验证",
+  tabsHome: "首页",
+  tabsImport: "导入",
+  tabsCoach: "教练",
+  tabsContacts: "联系人",
+  tabsProfile: "我的",
+  settingsTitle: "设置与隐私",
+  settingsEnvironment: "环境",
+  settingsPrivacy: "隐私默认值",
+  settingsTheme: "主题",
+  settingsLanguage: "语言",
+  settingsEnglish: "English",
+  settingsChinese: "简体中文",
+  settingsAppEnv: "App 环境：{value}",
+  settingsApi: "API：{value}",
+  settingsBackend: "后端：{value}",
+  settingsBackendChecking: "检查中",
+  settingsBackendConnected: "已连接",
+  settingsBackendOffline: "不可用",
+  settingsPrivacyUserInitiated: "每次分析都由你主动触发。",
+  settingsPrivacyScreenshots: "默认不保存原始截图。",
+  settingsPrivacyMemory: "记忆更新必须经过明确确认。",
+  homeKicker: "Between",
+  homeTitle: "你的私人关系工作台",
+  homeGreeting: "Hi {name}",
+  homeBody: "导入对话，理解情绪信号，并生成仍然像你的回复。",
+  homeReady: "关系画像状态",
+  homeReadyBody: "你的 Persona 和 Memory 已准备好，可以校准回复建议。",
+  homeSetupBody: "完成 onboarding 后，Between 可以适配你的语气、边界和关系上下文。",
+  homeStatusReady: "已就绪",
+  homeStatusSetup: "待设置",
+  homeSetup: "完成画像",
+  homeImport: "导入对话",
+  homeReviewMemory: "审核记忆",
+  homeMenuCoachBody: "生成温和、直接、俏皮或边界清晰的回复。",
+  homeMenuContactsBody: "查看关系上下文和已确认的记忆。",
+  homeMenuProfileBody: "调整 Persona、账号和设置。",
+  importTitle: "导入对话",
+  importBody: "Between 只分析你主动确认的内容。",
+  importPasteTitle: "粘贴文本",
+  importPlaceholder: "粘贴一段聊天记录",
+  importAnalyze: "分析文本",
+  importEmpty: "请先粘贴聊天内容。",
+  importScreenshotTitle: "截图导入",
+  importScreenshotBody: "截图会在你点击分析后才发送到后端感知流程。",
+  importChooseScreenshot: "选择截图",
+  importSelected: "已选择：{value}",
+  analysisTitle: "分析结果",
+  analysisEmpty: "还没有分析。请先导入一段对话。",
+  analysisTone: "语气",
+  analysisIntent: "意图",
+  analysisSubtext: "潜台词",
+  analysisSignal: "关系信号",
+  analysisRisk: "风险提示",
+  analysisConfidence: "置信度",
+  analysisMemory: "待审核记忆",
+  analysisApprove: "保存记忆",
+  analysisReject: "忽略记忆",
+  analysisDraft: "生成回复",
+  relationshipDefaultName: "关系对象",
+  coachTitle: "回复教练",
+  coachStyles: "回复风格",
+  coachGenerate: "生成回复",
+  coachEmpty: "请先完成一次对话分析。",
+  coachDrafts: "回复草稿",
+  contactsTitle: "联系人",
+  contactsEmptyTitle: "还没有联系人",
+  contactsEmptyBody: "保存记忆后，联系人关系上下文会逐步变得有用。",
+  contactsNoMemory: "还没有确认的记忆。",
+  profileTitle: "我的",
+  profileAccount: "账号",
+  profileVerified: "邮箱已验证",
+  profileUnverified: "需要验证邮箱",
+  profileDisplayName: "显示名称",
+  profilePersona: "我的画像",
+  profileMemory: "记忆",
+  profileNoPersona: "还没有画像",
+  profileNoPersonaBody: "完成 onboarding 后生成 persona 和 memory。",
+  profileSetup: "设置画像",
+  profileEdit: "编辑画像",
+  profileDelete: "删除 Persona",
+  profileLogout: "退出登录",
+  profilePrivacyBody: "分析由你主动触发。默认不保存原始截图。",
+  onboardingGenerate: "生成我的 Persona",
+  onboardingTitle: "Onboarding",
+  onboardingReviewKicker: "确认信息",
+  onboardingStepKicker: "第 {step} / {total} 步",
+  onboardingReviewTitle: "看起来怎么样？",
+  onboardingReviewBody: "确认后将使用 Learning Layer 生成 persona.md 和 memory.md。",
+  onboardingBody: "这些信息会让分析和回复建议更像你。",
+  onboardingStepIdentity: "先认识一下你",
+  onboardingStepCommunication: "你怎么说话？",
+  onboardingStepEmotional: "情感方式",
+  onboardingStepRelationship: "关系里的你",
+  onboardingNicknames: "代号 / 昵称",
+  onboardingNicknamesPlaceholder: "微信昵称、英文名、花名、备注名…",
+  onboardingAgeRange: "年龄段",
+  onboardingOccupation: "职业 / 身份",
+  onboardingOccupationPlaceholder: "产品经理、大学生、设计师…",
+  onboardingMbti: "MBTI",
+  onboardingZodiac: "星座",
+  onboardingSimpleMode: "简单填写",
+  onboardingComplexMode: "提供材料",
+  onboardingMaterials: "聊天记录 / 日记 / 自述",
+  onboardingMaterialsPlaceholder: "粘贴内容…（建议 200 字以上效果更好）",
+  onboardingMessageFormat: "发消息的习惯",
+  onboardingEmojiUsage: "emoji / 表情使用频率",
+  onboardingPunctuation: "标点习惯",
+  onboardingReplySpeed: "回复速度倾向",
+  onboardingCatchphrases: "口头禅",
+  onboardingCatchphrasesPlaceholder: "哈哈哈、好吧、随便、你认真的吗…",
+  onboardingAttachment: "依恋类型",
+  onboardingLoveLanguages: "爱的语言",
+  onboardingConflict: "发生冲突时，你通常",
+  onboardingWhenInterested: "喜欢一个人时，你会",
+  onboardingWhenInterestedPlaceholder: "例如：变得话很多，或者反而更沉默…",
+  onboardingRole: "在关系里，你通常是",
+  onboardingValuedTraits: "你最看重对方的",
+  onboardingDealbreakers: "你的底线 / 不可接受的事",
+  onboardingDealbreakersPlaceholder: "例如：不能先道歉、不喜欢被催回复…",
+  onboardingSectionIdentity: "身份",
+  onboardingSectionCommunication: "说话风格",
+  onboardingSectionEmotional: "情感模式",
+  onboardingSectionRelationship: "关系行为",
+  onboardingMode: "模式",
+  onboardingReviewMessageHabit: "消息习惯",
+  onboardingReviewPunctuation: "标点",
+  onboardingReviewReplySpeed: "回复速度",
+  onboardingReviewCatchphrases: "口头禅",
+  onboardingReviewConflict: "冲突应对",
+  onboardingReviewInterested: "喜欢时会",
+  onboardingReviewRole: "关系角色",
+  onboardingReviewTraits: "看重特质",
+  onboardingReviewDealbreakers: "底线",
+  onboardingReviewSummary: "查看总结",
+  onboardingNext: "下一步",
+  replyStyleWarm: "温和",
+  replyStyleDirect: "直接",
+  replyStylePlayful: "俏皮",
+  replyStyleBoundary: "边界",
+  replyStyleRepair: "修复",
+  replyStyleDoNotReply: "不回复"
+};
+
+const en: typeof zh = {
+  appName: "Between",
+  commonBack: "Back",
+  commonContinue: "Continue",
+  commonSave: "Save",
+  commonCancel: "Cancel",
+  commonError: "Something went wrong",
+  commonLoading: "Please wait",
+  commonChooseOne: "Choose one",
+  commonEmpty: "Not filled",
+  commonSelectedCount: "Choose up to {max} items ({count} selected)",
+  commonTagHint: "Press return, comma, or Chinese comma to add. Tap a tag to remove it.",
+  commonChars: "{count} chars",
+  commonFallbackDash: "—",
+  errorAuthFailed: "Authentication failed",
+  errorGeneratePersona: "Unable to generate persona",
+  errorUpdateProfile: "Unable to update profile",
+  errorDeletePersona: "Unable to delete persona",
+  errorResendVerification: "Unable to resend verification email",
+  errorVerificationIncomplete: "Verification is not complete yet",
+  errorVerifyLink: "Unable to verify this link",
+  errorSupabaseMissing: "Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.",
+  loginTitle: "Between",
+  loginBody: "Sign in with a verified email to continue with your private relationship profile.",
+  loginLogin: "Login",
+  loginRegister: "Register",
+  loginEmail: "Email",
+  loginPassword: "Password",
+  loginDisplayName: "Display name",
+  loginCreateAccount: "Create account",
+  verifyTitle: "Verify your email",
+  verifyBody: "Open the Supabase confirmation email, then return here to continue.",
+  verifyResend: "Resend email",
+  verifySent: "Verification email sent.",
+  authCallbackTitle: "Finishing verification",
+  tabsHome: "Home",
+  tabsImport: "Import",
+  tabsCoach: "Coach",
+  tabsContacts: "Contacts",
+  tabsProfile: "Profile",
+  settingsTitle: "Settings and privacy",
+  settingsEnvironment: "Environment",
+  settingsPrivacy: "Privacy defaults",
+  settingsTheme: "Theme",
+  settingsLanguage: "Language",
+  settingsEnglish: "English",
+  settingsChinese: "Simplified Chinese",
+  settingsAppEnv: "App env: {value}",
+  settingsApi: "API: {value}",
+  settingsBackend: "Backend: {value}",
+  settingsBackendChecking: "checking",
+  settingsBackendConnected: "connected",
+  settingsBackendOffline: "not reachable",
+  settingsPrivacyUserInitiated: "Every analysis is user initiated.",
+  settingsPrivacyScreenshots: "Raw screenshots are not persisted by default.",
+  settingsPrivacyMemory: "Memory patches require explicit approval.",
+  homeKicker: "Between",
+  homeTitle: "Your private relationship console",
+  homeGreeting: "Hi {name}",
+  homeBody: "Import conversations, understand the emotional signal, and draft replies that still sound like you.",
+  homeReady: "Profile readiness",
+  homeReadyBody: "Your persona and memory files are ready for calibrated replies.",
+  homeSetupBody: "Complete onboarding so Between can adapt tone, boundaries, and relationship context.",
+  homeStatusReady: "Ready",
+  homeStatusSetup: "Setup",
+  homeSetup: "Complete profile",
+  homeImport: "Import conversation",
+  homeReviewMemory: "Review memory",
+  homeMenuCoachBody: "Draft a warm, direct, playful, or boundary-setting response.",
+  homeMenuContactsBody: "Review relationship context and approved memories.",
+  homeMenuProfileBody: "Tune your persona and account settings.",
+  importTitle: "Import a conversation",
+  importBody: "Between analyzes only what you explicitly confirm.",
+  importPasteTitle: "Paste text",
+  importPlaceholder: "Paste a chat excerpt",
+  importAnalyze: "Analyze text",
+  importEmpty: "Paste a conversation first.",
+  importScreenshotTitle: "Screenshot import",
+  importScreenshotBody: "The app sends the selected image to the backend perception flow only after you tap analyze.",
+  importChooseScreenshot: "Choose screenshot",
+  importSelected: "Selected: {value}",
+  analysisTitle: "Analysis result",
+  analysisEmpty: "No analysis yet. Import a conversation first.",
+  analysisTone: "Tone",
+  analysisIntent: "Intent",
+  analysisSubtext: "Subtext",
+  analysisSignal: "Relationship signal",
+  analysisRisk: "Risk flags",
+  analysisConfidence: "Confidence",
+  analysisMemory: "Memory to review",
+  analysisApprove: "Save memory",
+  analysisReject: "Ignore memory",
+  analysisDraft: "Draft reply",
+  relationshipDefaultName: "Relationship",
+  coachTitle: "Reply coach",
+  coachStyles: "Draft styles",
+  coachGenerate: "Generate replies",
+  coachEmpty: "Run a conversation analysis first.",
+  coachDrafts: "Reply drafts",
+  contactsTitle: "Contacts",
+  contactsEmptyTitle: "No contacts yet",
+  contactsEmptyBody: "After you save memory, relationship context will become useful over time.",
+  contactsNoMemory: "No approved memory yet.",
+  profileTitle: "Profile",
+  profileAccount: "Account",
+  profileVerified: "Verified email",
+  profileUnverified: "Email verification required",
+  profileDisplayName: "Display name",
+  profilePersona: "My Profile",
+  profileMemory: "Memory",
+  profileNoPersona: "No profile yet",
+  profileNoPersonaBody: "Complete onboarding to build your persona and memory files.",
+  profileSetup: "Set up Profile",
+  profileEdit: "Edit Profile",
+  profileDelete: "Delete Persona",
+  profileLogout: "Logout",
+  profilePrivacyBody: "Analysis is user initiated. Raw screenshots are not stored by default.",
+  onboardingGenerate: "Generate my Persona",
+  onboardingTitle: "Onboarding",
+  onboardingReviewKicker: "Review",
+  onboardingStepKicker: "Step {step} / {total}",
+  onboardingReviewTitle: "How does this look?",
+  onboardingReviewBody: "After confirmation, the Learning Layer will generate persona.md and memory.md.",
+  onboardingBody: "These details help analysis and reply suggestions sound more like you.",
+  onboardingStepIdentity: "First, who are you?",
+  onboardingStepCommunication: "How do you text?",
+  onboardingStepEmotional: "Emotional patterns",
+  onboardingStepRelationship: "You in relationships",
+  onboardingNicknames: "Names / nicknames",
+  onboardingNicknamesPlaceholder: "WeChat name, English name, nickname, contact note...",
+  onboardingAgeRange: "Age range",
+  onboardingOccupation: "Occupation / role",
+  onboardingOccupationPlaceholder: "Product manager, student, designer...",
+  onboardingMbti: "MBTI",
+  onboardingZodiac: "Zodiac",
+  onboardingSimpleMode: "Quick form",
+  onboardingComplexMode: "Provide materials",
+  onboardingMaterials: "Chat logs / journal / self-notes",
+  onboardingMaterialsPlaceholder: "Paste content here... 200+ characters works better.",
+  onboardingMessageFormat: "Message format",
+  onboardingEmojiUsage: "Emoji / sticker frequency",
+  onboardingPunctuation: "Punctuation habits",
+  onboardingReplySpeed: "Reply speed",
+  onboardingCatchphrases: "Catchphrases",
+  onboardingCatchphrasesPlaceholder: "haha, fine, whatever, are you serious...",
+  onboardingAttachment: "Attachment style",
+  onboardingLoveLanguages: "Love languages",
+  onboardingConflict: "During conflict, you usually",
+  onboardingWhenInterested: "When you like someone, you",
+  onboardingWhenInterestedPlaceholder: "For example: text more, or become quieter...",
+  onboardingRole: "In relationships, you are usually",
+  onboardingValuedTraits: "You value most in others",
+  onboardingDealbreakers: "Boundaries / dealbreakers",
+  onboardingDealbreakersPlaceholder: "For example: cannot apologize first, dislike being rushed to reply...",
+  onboardingSectionIdentity: "Identity",
+  onboardingSectionCommunication: "Communication style",
+  onboardingSectionEmotional: "Emotional patterns",
+  onboardingSectionRelationship: "Relationship behavior",
+  onboardingMode: "Mode",
+  onboardingReviewMessageHabit: "Message habit",
+  onboardingReviewPunctuation: "Punctuation",
+  onboardingReviewReplySpeed: "Reply speed",
+  onboardingReviewCatchphrases: "Catchphrases",
+  onboardingReviewConflict: "Conflict response",
+  onboardingReviewInterested: "When interested",
+  onboardingReviewRole: "Relationship role",
+  onboardingReviewTraits: "Valued traits",
+  onboardingReviewDealbreakers: "Dealbreakers",
+  onboardingReviewSummary: "Review summary",
+  onboardingNext: "Next",
+  replyStyleWarm: "Warm",
+  replyStyleDirect: "Direct",
+  replyStylePlayful: "Playful",
+  replyStyleBoundary: "Boundary",
+  replyStyleRepair: "Repair",
+  replyStyleDoNotReply: "Do not reply"
+};
+
+export const dictionaries = { en, "zh-CN": zh };
+export type TKey = keyof typeof zh;
+
+export type LocalizedOption = { value: string; label: string };
+type OptionLabels = Record<string, { en: string; "zh-CN": string }>;
+
+const optionLabels = {
+  mbti: {
+    INTJ: { en: "INTJ", "zh-CN": "INTJ" },
+    INTP: { en: "INTP", "zh-CN": "INTP" },
+    ENTJ: { en: "ENTJ", "zh-CN": "ENTJ" },
+    ENTP: { en: "ENTP", "zh-CN": "ENTP" },
+    INFJ: { en: "INFJ", "zh-CN": "INFJ" },
+    INFP: { en: "INFP", "zh-CN": "INFP" },
+    ENFJ: { en: "ENFJ", "zh-CN": "ENFJ" },
+    ENFP: { en: "ENFP", "zh-CN": "ENFP" },
+    ISTJ: { en: "ISTJ", "zh-CN": "ISTJ" },
+    ISFJ: { en: "ISFJ", "zh-CN": "ISFJ" },
+    ESTJ: { en: "ESTJ", "zh-CN": "ESTJ" },
+    ESFJ: { en: "ESFJ", "zh-CN": "ESFJ" },
+    ISTP: { en: "ISTP", "zh-CN": "ISTP" },
+    ISFP: { en: "ISFP", "zh-CN": "ISFP" },
+    ESTP: { en: "ESTP", "zh-CN": "ESTP" },
+    ESFP: { en: "ESFP", "zh-CN": "ESFP" },
+    unknown: { en: "Not sure", "zh-CN": "不知道" }
+  },
+  zodiac: {
+    aries: { en: "Aries", "zh-CN": "白羊座" },
+    taurus: { en: "Taurus", "zh-CN": "金牛座" },
+    gemini: { en: "Gemini", "zh-CN": "双子座" },
+    cancer: { en: "Cancer", "zh-CN": "巨蟹座" },
+    leo: { en: "Leo", "zh-CN": "狮子座" },
+    virgo: { en: "Virgo", "zh-CN": "处女座" },
+    libra: { en: "Libra", "zh-CN": "天秤座" },
+    scorpio: { en: "Scorpio", "zh-CN": "天蝎座" },
+    sagittarius: { en: "Sagittarius", "zh-CN": "射手座" },
+    capricorn: { en: "Capricorn", "zh-CN": "摩羯座" },
+    aquarius: { en: "Aquarius", "zh-CN": "水瓶座" },
+    pisces: { en: "Pisces", "zh-CN": "双鱼座" },
+    skip: { en: "Skip", "zh-CN": "跳过" }
+  },
+  ageRange: {
+    "18-22": { en: "18-22", "zh-CN": "18-22" },
+    "23-27": { en: "23-27", "zh-CN": "23-27" },
+    "28-35": { en: "28-35", "zh-CN": "28-35" },
+    "35+": { en: "35+", "zh-CN": "35+" }
+  },
+  messageFormat: {
+    burst: { en: "Short bursts", "zh-CN": "短句连发" },
+    paragraph: { en: "One full paragraph", "zh-CN": "一整段说完" },
+    depends: { en: "Depends on context", "zh-CN": "视情况而定" }
+  },
+  emojiUsage: {
+    often: { en: "Often", "zh-CN": "经常用" },
+    sometimes: { en: "Sometimes", "zh-CN": "偶尔用" },
+    rarely: { en: "Rarely", "zh-CN": "基本不用" }
+  },
+  punctuation: {
+    no_period: { en: "Avoids periods", "zh-CN": "不用句号" },
+    ellipsis: { en: "Uses ellipses...", "zh-CN": "常用省略号…" },
+    tilde: { en: "Likes ~", "zh-CN": "喜欢用～" },
+    full_width: { en: "Full-width punctuation", "zh-CN": "全角标点" },
+    none: { en: "No special habit", "zh-CN": "无特殊习惯" }
+  },
+  replySpeed: {
+    instant: { en: "Replies fast", "zh-CN": "秒回" },
+    mood: { en: "Depends on mood", "zh-CN": "看心情" },
+    slow: { en: "Not rushed", "zh-CN": "不着急" },
+    read_no_reply: { en: "May read without replying", "zh-CN": "已读不回" }
+  },
+  attachment: {
+    secure: { en: "Secure", "zh-CN": "安全型" },
+    anxious: { en: "Anxious", "zh-CN": "焦虑型" },
+    avoidant: { en: "Avoidant", "zh-CN": "回避型" },
+    unsure: { en: "Not sure", "zh-CN": "不确定" }
+  },
+  loveLanguages: {
+    words: { en: "Words of affirmation", "zh-CN": "肯定的话语" },
+    time: { en: "Quality time", "zh-CN": "精心的时刻" },
+    touch: { en: "Physical touch", "zh-CN": "身体接触" },
+    acts: { en: "Acts of service", "zh-CN": "服务行为" },
+    gifts: { en: "Receiving gifts", "zh-CN": "接受礼物" }
+  },
+  conflict: {
+    silent: { en: "Goes quiet / withdraws", "zh-CN": "冷暴力 / 沉默" },
+    direct: { en: "Says it directly", "zh-CN": "直接说出来" },
+    deflect: { en: "Changes the topic", "zh-CN": "转移话题" },
+    sarcastic: { en: "Uses sarcasm", "zh-CN": "说反话" }
+  },
+  relationshipRole: {
+    initiator: { en: "Usually initiates", "zh-CN": "主动方" },
+    responder: { en: "Usually responds", "zh-CN": "被动方" },
+    contextual: { en: "Depends on the other person", "zh-CN": "看对方" },
+    equal: { en: "Fairly balanced", "zh-CN": "比较平等" }
+  },
+  valuedTraits: {
+    sincerity: { en: "Sincerity", "zh-CN": "真诚" },
+    humor: { en: "Humor", "zh-CN": "幽默" },
+    independence: { en: "Independence", "zh-CN": "独立" },
+    boundaries: { en: "Good boundaries", "zh-CN": "有边界感" },
+    shared_topics: { en: "Shared topics", "zh-CN": "共同话题" },
+    stable: { en: "Emotional steadiness", "zh-CN": "情绪稳定" },
+    interesting: { en: "Interesting personality", "zh-CN": "有趣" }
+  }
+} satisfies Record<string, OptionLabels>;
+
+const replyStyleKeys: Record<ReplyStyle, TKey> = {
+  warm: "replyStyleWarm",
+  direct: "replyStyleDirect",
+  playful: "replyStylePlayful",
+  boundary: "replyStyleBoundary",
+  repair: "replyStyleRepair",
+  do_not_reply: "replyStyleDoNotReply"
+};
+
+export function normalizeLocale(locale?: string | null): Locale {
+  if (locale?.toLowerCase().startsWith("zh")) {
+    return "zh-CN";
+  }
+  return "en";
+}
+
+function interpolate(template: string, params?: Params) {
+  if (!params) {
+    return template;
+  }
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(params[key] ?? `{${key}}`));
+}
+
+export function translate(locale: Locale, key: TKey, params?: Params) {
+  return interpolate(dictionaries[locale][key] ?? dictionaries.en[key] ?? key, params);
+}
+
+export function useT() {
+  const locale = useAppStore((state) => state.locale);
+  return (key: TKey, params?: Params) => translate(locale, key, params);
+}
+
+export function useLocale() {
+  return useAppStore((state) => state.locale);
+}
+
+export function optionsFor(setName: keyof typeof optionLabels, locale: Locale): LocalizedOption[] {
+  return Object.entries(optionLabels[setName] as OptionLabels).map(([value, labels]) => ({ value, label: labels[locale] }));
+}
+
+export function optionLabel(setName: keyof typeof optionLabels, value: string, locale: Locale) {
+  return (optionLabels[setName] as OptionLabels)[value]?.[locale] ?? value;
+}
+
+export function replyStyleLabel(style: ReplyStyle, locale: Locale) {
+  return translate(locale, replyStyleKeys[style]);
+}
+
+export function replyStyleOptions(locale: Locale): Array<{ value: ReplyStyle; label: string }> {
+  return (Object.keys(replyStyleKeys) as ReplyStyle[]).map((value) => ({ value, label: replyStyleLabel(value, locale) }));
+}
+
+function normalizeValue(setName: keyof typeof optionLabels, value: string) {
+  if (!value) {
+    return "";
+  }
+  if ((optionLabels[setName] as OptionLabels)[value]) {
+    return value;
+  }
+  const match = Object.entries(optionLabels[setName] as OptionLabels).find(([, labels]) => labels.en === value || labels["zh-CN"] === value);
+  return match?.[0] ?? value;
+}
+
+function normalizeArray(setName: keyof typeof optionLabels, values: string[] = []) {
+  return values.map((value) => normalizeValue(setName, value)).filter(Boolean);
+}
+
+export function normalizeOnboardingForm(saved?: Partial<OnboardingForm>): OnboardingForm {
+  return {
+    identity: {
+      nicknames: saved?.identity?.nicknames ?? [],
+      age_range: normalizeValue("ageRange", saved?.identity?.age_range ?? ""),
+      occupation: saved?.identity?.occupation ?? "",
+      mbti: normalizeValue("mbti", saved?.identity?.mbti ?? ""),
+      zodiac: normalizeValue("zodiac", saved?.identity?.zodiac ?? "")
+    },
+    communication: {
+      mode: saved?.communication?.mode ?? "simple",
+      materials: saved?.communication?.materials ?? "",
+      message_format: normalizeValue("messageFormat", saved?.communication?.message_format ?? ""),
+      emoji_usage: normalizeValue("emojiUsage", saved?.communication?.emoji_usage ?? ""),
+      punctuation_habits: normalizeArray("punctuation", saved?.communication?.punctuation_habits ?? []),
+      reply_speed: normalizeValue("replySpeed", saved?.communication?.reply_speed ?? ""),
+      catchphrases: saved?.communication?.catchphrases ?? []
+    },
+    emotional: {
+      attachment_style: normalizeValue("attachment", saved?.emotional?.attachment_style ?? ""),
+      love_languages: normalizeArray("loveLanguages", saved?.emotional?.love_languages ?? []),
+      conflict_response: normalizeValue("conflict", saved?.emotional?.conflict_response ?? ""),
+      when_interested: saved?.emotional?.when_interested ?? ""
+    },
+    relationship: {
+      role: normalizeValue("relationshipRole", saved?.relationship?.role ?? ""),
+      valued_traits: normalizeArray("valuedTraits", saved?.relationship?.valued_traits ?? []),
+      dealbreakers: saved?.relationship?.dealbreakers ?? ""
+    }
+  };
+}
+
+export function localizeOnboardingForm(form: OnboardingForm, locale: Locale) {
+  return {
+    identity: {
+      ...form.identity,
+      age_range_label: optionLabel("ageRange", form.identity.age_range, locale),
+      mbti_label: optionLabel("mbti", form.identity.mbti, locale),
+      zodiac_label: optionLabel("zodiac", form.identity.zodiac, locale)
+    },
+    communication: {
+      ...form.communication,
+      mode_label: form.communication.mode === "complex" ? translate(locale, "onboardingComplexMode") : translate(locale, "onboardingSimpleMode"),
+      message_format_label: optionLabel("messageFormat", form.communication.message_format, locale),
+      emoji_usage_label: optionLabel("emojiUsage", form.communication.emoji_usage, locale),
+      punctuation_habits_labels: form.communication.punctuation_habits.map((value) => optionLabel("punctuation", value, locale)),
+      reply_speed_label: optionLabel("replySpeed", form.communication.reply_speed, locale)
+    },
+    emotional: {
+      ...form.emotional,
+      attachment_style_label: optionLabel("attachment", form.emotional.attachment_style, locale),
+      love_languages_labels: form.emotional.love_languages.map((value) => optionLabel("loveLanguages", value, locale)),
+      conflict_response_label: optionLabel("conflict", form.emotional.conflict_response, locale)
+    },
+    relationship: {
+      ...form.relationship,
+      role_label: optionLabel("relationshipRole", form.relationship.role, locale),
+      valued_traits_labels: form.relationship.valued_traits.map((value) => optionLabel("valuedTraits", value, locale))
+    }
+  };
+}

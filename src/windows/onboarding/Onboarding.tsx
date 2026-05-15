@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { emit } from "@tauri-apps/api/event";
 import { useNavigate } from "react-router-dom";
+import { emitAppEvent, hideCurrentWindow, isTauriRuntime, readAppFile, writeAppFile } from "../../lib/browserStorage";
 import { chatLearning } from "../../lib/gateway";
 import "./Onboarding.css";
 
@@ -720,7 +718,7 @@ export default function Onboarding() {
 
   // Pre-populate form from saved user/form.json (edit mode)
   useEffect(() => {
-    invoke<string>("read_file", { relativePath: "user/form.json" })
+    readAppFile("user/form.json")
       .then((raw) => {
         if (raw?.trim()) {
           const saved = JSON.parse(raw) as Partial<FormData>;
@@ -791,14 +789,14 @@ export default function Onboarding() {
       ]);
 
       await Promise.all([
-        invoke("write_file", { relativePath: "user/persona.md", content: personaRes.content.trim() }),
-        invoke("write_file", { relativePath: "user/memory.md", content: memoryRes.content.trim() }),
-        invoke("write_file", { relativePath: "user/form.json", content: JSON.stringify(form, null, 2) }),
+        writeAppFile("user/persona.md", personaRes.content.trim()),
+        writeAppFile("user/memory.md", memoryRes.content.trim()),
+        writeAppFile("user/form.json", JSON.stringify(form, null, 2)),
       ]);
 
-      await emit("btw-persona-updated", {});
-      navigate("/"); // return to App route so next open_onboarding works cleanly
-      await getCurrentWindow().hide();
+      await emitAppEvent("btw-persona-updated");
+      navigate(isTauriRuntime() ? "/" : "/overlay"); // browser dev can continue into overlay
+      await hideCurrentWindow();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStep(TOTAL_STEPS); // go back to review so user can retry

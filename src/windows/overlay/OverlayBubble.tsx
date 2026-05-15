@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { isTauriRuntime } from "../../lib/browserStorage";
 import { captureStore, useCaptureStore } from "../../lib/captureStore";
 import { onCaptureTriggered, analyzePerception } from "../../lib/gateway";
 import { resolveContactId, ensureContact, appendConversation } from "../../lib/contactRegistry";
@@ -23,6 +24,10 @@ export default function OverlayBubble() {
   }
 
   function refreshContactsCache() {
+    if (!isTauriRuntime()) {
+      setContactsCache({});
+      return;
+    }
     invoke<Array<{ id: string; name: string; platform: string }>>("list_contacts")
       .then((list) => {
         const map: Record<string, string> = {};
@@ -42,6 +47,11 @@ export default function OverlayBubble() {
 
   // Listen for persona updated event (after onboarding completes)
   useEffect(() => {
+    if (!isTauriRuntime()) {
+      const handler = () => setContactsCache((prev) => ({ ...prev }));
+      window.addEventListener("btw-persona-updated", handler);
+      return () => window.removeEventListener("btw-persona-updated", handler);
+    }
     let unlisten: (() => void) | undefined;
     listen("btw-persona-updated", () => {
       // Trigger HomeView persona re-check by forcing a re-render
@@ -103,18 +113,24 @@ export default function OverlayBubble() {
 
   async function handleExpand() {
     setExpanded(true);
-    await invoke("resize_overlay", EXPANDED_SIZE);
+    if (isTauriRuntime()) {
+      await invoke("resize_overlay", EXPANDED_SIZE);
+    }
   }
 
   async function handleCollapse() {
     setExpanded(false);
-    await invoke("resize_overlay", COLLAPSED_SIZE);
+    if (isTauriRuntime()) {
+      await invoke("resize_overlay", COLLAPSED_SIZE);
+    }
   }
 
   async function handleClose() {
     setExpanded(false);
-    await invoke("resize_overlay", COLLAPSED_SIZE);
-    await invoke("hide_overlay");
+    if (isTauriRuntime()) {
+      await invoke("resize_overlay", COLLAPSED_SIZE);
+      await invoke("hide_overlay");
+    }
   }
 
   const displayContactName = state.activeContactId

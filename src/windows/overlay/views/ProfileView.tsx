@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { clearAppFile, isTauriRuntime, readAppFile } from "../../../lib/browserStorage";
 import { invoke } from "@tauri-apps/api/core";
 
 export default function ProfileView() {
@@ -7,7 +8,7 @@ export default function ProfileView() {
 
   function load() {
     setLoading(true);
-    invoke<string>("read_file", { relativePath: "user/persona.md" })
+    readAppFile("user/persona.md")
       .then((c) => setPersona(c ?? ""))
       .catch(() => setPersona(""))
       .finally(() => setLoading(false));
@@ -16,7 +17,11 @@ export default function ProfileView() {
   useEffect(load, []);
 
   async function handleEdit() {
-    await invoke("open_onboarding");
+    if (isTauriRuntime()) {
+      await invoke("open_onboarding");
+    } else {
+      window.location.href = "/onboarding";
+    }
   }
 
   async function handleDelete() {
@@ -24,8 +29,8 @@ export default function ProfileView() {
     if (!confirmed) return;
     try {
       await Promise.all([
-        invoke("write_file", { relativePath: "user/persona.md", content: "" }),
-        invoke("write_file", { relativePath: "user/memory.md", content: "" }).catch(() => {}),
+        clearAppFile("user/persona.md"),
+        clearAppFile("user/memory.md").catch(() => {}),
       ]);
       setPersona("");
     } catch (e) {
