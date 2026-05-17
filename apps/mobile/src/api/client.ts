@@ -6,11 +6,13 @@ import type {
   AuthResponse,
   AuthUser,
   Contact,
+  ContactInput,
   ImportAnalysisResponse,
   ImportedConversation,
   MemoryPatch,
   OnboardingForm,
   OnboardingGenerationResponse,
+  PrivacyExport,
   ReplyGenerationResponse,
   ReplyStyle,
 } from "./types";
@@ -83,13 +85,17 @@ export const mobileApi = {
 
   deletePersona: () => request<{ status: string; user: AuthUser }>("/v1/mobile/persona", { method: "DELETE" }),
 
+  exportPrivacyData: () => request<PrivacyExport>("/v1/mobile/privacy/export"),
+
+  deleteAccount: () => request<{ status: string }>("/v1/mobile/account", { method: "DELETE" }),
+
   generateOnboarding: (form: OnboardingForm, locale = useAppStore.getState().locale) =>
     request<OnboardingGenerationResponse>("/v1/mobile/onboarding/generate", {
       method: "POST",
       body: { form, locale, display_labels: localizeOnboardingForm(form, locale) }
     }),
 
-  analyzeImport: (conversation: Pick<ImportedConversation, "sourceType" | "rawText" | "localScreenshotUri" | "contactId">) =>
+  analyzeImport: (conversation: Pick<ImportedConversation, "sourceType" | "rawText" | "localScreenshotUri" | "screenshotDataUri" | "contactId"> & { contactName?: string }) =>
     request<ImportAnalysisResponse>("/v1/mobile/import/analyze", {
       method: "POST",
       body: { ...conversation, locale: useAppStore.getState().locale }
@@ -115,5 +121,28 @@ export const mobileApi = {
       body: { patch, confirm: true, locale: useAppStore.getState().locale }
     }),
 
-  listContacts: () => request<{ contacts: Contact[] }>("/v1/mobile/contacts")
+  listMemoryPatches: (status?: MemoryPatch["status"]) =>
+    request<{ patches: MemoryPatch[] }>(`/v1/mobile/memory/patches${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+
+  updateMemoryPatch: (patchId: string, status: MemoryPatch["status"], proposedAdditions?: string[]) =>
+    request<{ patch: MemoryPatch }>(`/v1/mobile/memory/patches/${patchId}`, {
+      method: "PATCH",
+      body: { status, proposedAdditions }
+    }),
+
+  listContacts: () => request<{ contacts: Contact[] }>("/v1/mobile/contacts"),
+
+  createContact: (contact: ContactInput) =>
+    request<Contact>("/v1/mobile/contacts", {
+      method: "POST",
+      body: contact
+    }),
+
+  updateContact: (contactId: string, contact: Partial<ContactInput>) =>
+    request<Contact>(`/v1/mobile/contacts/${contactId}`, {
+      method: "PATCH",
+      body: contact
+    }),
+
+  deleteContact: (contactId: string) => request<{ status: string }>(`/v1/mobile/contacts/${contactId}`, { method: "DELETE" })
 };

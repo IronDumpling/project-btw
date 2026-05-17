@@ -1,10 +1,12 @@
 import { useRouter } from "expo-router";
+import { ClipboardCheck } from "lucide-react-native";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { mobileApi } from "@/api/client";
 import type { CommunicationData, EmotionalData, IdentityData, OnboardingForm, RelationshipData } from "@/api/types";
 import { Card } from "@/components/Card";
 import { ChoiceGroup } from "@/components/ChoiceGroup";
+import { IconBadge } from "@/components/DesignSystem";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Screen } from "@/components/Screen";
@@ -160,13 +162,14 @@ export default function OnboardingScreen() {
 
   return (
     <RequireAuth>
-      <Screen>
-        <View style={styles.header}>
-          <Text style={styles.kicker}>{isReview ? t("onboardingReviewKicker") : t("onboardingStepKicker", { step: step + 1, total: TOTAL_STEPS })}</Text>
-          <Text style={styles.title}>{isReview ? t("onboardingReviewTitle") : stepTitles[step]}</Text>
-          <Text style={styles.body}>
-            {isReview ? t("onboardingReviewBody") : t("onboardingBody")}
-          </Text>
+      <Screen
+        kicker={isReview ? t("onboardingReviewKicker") : t("onboardingStepKicker", { step: step + 1, total: TOTAL_STEPS })}
+        title={isReview ? t("onboardingReviewTitle") : stepTitles[step]}
+        subtitle={isReview ? t("onboardingReviewBody") : t("onboardingBody")}
+        trailing={<IconBadge icon={ClipboardCheck} />}
+      >
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.min(100, ((step + 1) / (TOTAL_STEPS + 1)) * 100)}%` }]} />
         </View>
 
         {error ? <Text style={styles.error}>{t("commonError")}：{error}</Text> : null}
@@ -272,20 +275,6 @@ export default function OnboardingScreen() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  header: {
-    gap: spacing.xs
-  },
-  kicker: {
-    color: colors.accent,
-    fontSize: 13,
-    fontWeight: "800",
-    textTransform: "uppercase"
-  },
-  title: {
-    color: colors.ink,
-    fontSize: 24,
-    fontWeight: "800"
-  },
   body: {
     color: colors.muted,
     fontSize: 15,
@@ -307,7 +296,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   input: {
     borderColor: colors.line,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     color: colors.ink,
     fontSize: 15,
@@ -316,7 +305,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   textArea: {
     borderColor: colors.line,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     color: colors.ink,
     fontSize: 15,
@@ -338,7 +327,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   tag: {
     backgroundColor: colors.accentSoft,
-    borderRadius: 8,
+    borderRadius: 999,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs
   },
@@ -375,5 +364,16 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.danger,
     fontSize: 14,
     lineHeight: 20
+  },
+  progressTrack: {
+    backgroundColor: colors.accentSoft,
+    borderRadius: 999,
+    height: 8,
+    overflow: "hidden"
+  },
+  progressFill: {
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+    height: "100%"
   }
 });

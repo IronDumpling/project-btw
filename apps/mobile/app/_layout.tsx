@@ -95,12 +95,16 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="login" options={{ title: t("loginLogin"), headerShown: false }} />
+        <Stack.Screen name="terms" options={{ title: t("termsTitle") }} />
+        <Stack.Screen name="privacy-policy" options={{ title: t("privacyPolicyTitle") }} />
         <Stack.Screen name="verify-email" options={{ title: t("verifyTitle"), headerShown: false }} />
         <Stack.Screen name="auth/callback" options={{ title: t("verifyTitle"), headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ title: t("onboardingTitle") }} />
         <Stack.Screen name="analysis" options={{ title: t("analysisTitle") }} />
         <Stack.Screen name="settings" options={{ title: t("settingsTitle") }} />
+        <Stack.Screen name="privacy" options={{ title: t("privacyTitle") }} />
+        <Stack.Screen name="memory-review" options={{ title: t("memoryReviewTitle") }} />
       </Stack>
     </QueryClientProvider>
   );

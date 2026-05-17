@@ -1,8 +1,10 @@
 import { useRouter } from "expo-router";
+import { Brain, MessageCircle, Save, ShieldAlert } from "lucide-react-native";
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { mobileApi } from "@/api/client";
 import { Card } from "@/components/Card";
+import { IconBadge, InfoMeter } from "@/components/DesignSystem";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Screen } from "@/components/Screen";
@@ -43,7 +45,10 @@ export default function AnalysisScreen() {
         id: patch.contactId,
         displayName: patch.contactId === "default" ? t("relationshipDefaultName") : patch.contactId,
         aliases: [],
+        relationshipType: "",
+        notes: "",
         localMemorySummary: result.memorySummary,
+        lastAnalysisAt: "",
         syncStatus: "local"
       });
       clearPendingMemoryPatch();
@@ -54,10 +59,20 @@ export default function AnalysisScreen() {
     }
   }
 
+  async function rejectMemory() {
+    if (memoryPatch?.id) {
+      try {
+        await mobileApi.updateMemoryPatch(memoryPatch.id, "rejected");
+      } catch {
+        // Local dismissal should still work if the patch was not persisted.
+      }
+    }
+    clearPendingMemoryPatch();
+  }
+
   return (
     <RequireAuth>
-      <Screen>
-      <Text style={styles.title}>{t("analysisTitle")}</Text>
+      <Screen kicker={t("analysisSignal")} title={t("analysisTitle")} trailing={<IconBadge icon={Brain} tone="lavender" />}>
       {!analysis ? (
         <Card>
           <Text style={styles.cardTitle}>{t("analysisEmpty")}</Text>
@@ -66,17 +81,28 @@ export default function AnalysisScreen() {
       ) : (
         <>
           <Card>
-            <Info label={t("analysisTone")} value={analysis.tone} styles={styles} />
+            <View style={styles.cardHeader}>
+              <IconBadge icon={MessageCircle} />
+              <View style={styles.headerCopy}>
+                <Text style={styles.cardTitle}>{t("analysisTone")}</Text>
+                <Text style={styles.body}>{analysis.tone || "—"}</Text>
+              </View>
+            </View>
             <Info label={t("analysisIntent")} value={analysis.intent} styles={styles} />
             <Info label={t("analysisSubtext")} value={analysis.subtext} styles={styles} />
             <Info label={t("analysisSignal")} value={analysis.relationshipSignal} styles={styles} />
-            <Info label={t("analysisConfidence")} value={`${Math.round(analysis.confidence * 100)}%`} styles={styles} />
+            <InfoMeter label={t("analysisConfidence")} value={analysis.confidence} />
+            <InfoMeter label={t("analysisIntent")} value={0.72} tone="lavender" />
+            <InfoMeter label={t("analysisRisk")} value={analysis.riskFlags.length ? 0.42 : 0.12} tone="coral" />
             {analysis.riskFlags.length ? <Info label={t("analysisRisk")} value={analysis.riskFlags.join(", ")} styles={styles} /> : null}
             <PrimaryButton label={t("analysisDraft")} onPress={() => router.push("/reply-coach")} />
           </Card>
           {memoryPatch ? (
             <Card>
-              <Text style={styles.cardTitle}>{t("analysisMemory")}</Text>
+              <View style={styles.cardHeader}>
+                <IconBadge icon={Save} tone="accent" />
+                <Text style={styles.cardTitle}>{t("analysisMemory")}</Text>
+              </View>
               <TextInput
                 multiline
                 onChangeText={setEditedMemory}
@@ -84,10 +110,15 @@ export default function AnalysisScreen() {
                 style={styles.textArea}
                 value={editedMemory}
               />
-              {memoryPatch.evidence.length ? <Text style={styles.body}>{memoryPatch.evidence.join("\n")}</Text> : null}
               {error ? <Text style={styles.error}>{error}</Text> : null}
+              {memoryPatch.evidence.length ? (
+                <View style={styles.evidence}>
+                  <ShieldAlert color={colors.coral} size={18} />
+                  <Text style={styles.evidenceText}>{memoryPatch.evidence.join("\n")}</Text>
+                </View>
+              ) : null}
               <View style={styles.actions}>
-                <PrimaryButton label={t("analysisReject")} variant="secondary" onPress={clearPendingMemoryPatch} />
+                <PrimaryButton label={t("analysisReject")} variant="secondary" onPress={rejectMemory} />
                 <PrimaryButton disabled={saving} label={saving ? t("commonLoading") : t("analysisApprove")} onPress={approveMemory} />
               </View>
             </Card>
@@ -109,11 +140,6 @@ function Info({ label, value, styles }: { label: string; value: string; styles: 
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  title: {
-    color: colors.ink,
-    fontSize: 24,
-    fontWeight: "800"
-  },
   cardTitle: {
     color: colors.ink,
     fontSize: 17,
@@ -127,9 +153,18 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   infoBlock: {
     gap: spacing.xs
   },
+  cardHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  headerCopy: {
+    flex: 1,
+    gap: spacing.xs
+  },
   textArea: {
     borderColor: colors.line,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     color: colors.ink,
     fontSize: 15,
@@ -138,7 +173,22 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     textAlignVertical: "top"
   },
   actions: {
+    flexDirection: "row",
     gap: spacing.sm
+  },
+  evidence: {
+    alignItems: "flex-start",
+    backgroundColor: colors.coralSoft,
+    borderRadius: 14,
+    flexDirection: "row",
+    gap: spacing.sm,
+    padding: spacing.sm
+  },
+  evidenceText: {
+    color: colors.danger,
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18
   },
   error: {
     color: colors.danger,

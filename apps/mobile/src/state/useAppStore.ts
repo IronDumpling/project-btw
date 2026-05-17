@@ -34,7 +34,9 @@ type AppState = {
   setThemeId: (themeId: ThemeId) => void;
   setOnboardingDraft: (draft: OnboardingForm) => void;
   setUserPersona: (persona: UserPersona | null) => void;
+  setContacts: (contacts: Contact[]) => void;
   addContact: (contact: Contact) => void;
+  removeContact: (contactId: string) => void;
   setAnalysisFlow: (payload: {
     conversation: ImportedConversation;
     analysis: AnalysisResult;
@@ -87,14 +89,17 @@ export const useAppStore = create<AppState>((set) => ({
       currentConversation: null,
       currentAnalysis: null,
       pendingMemoryPatch: null,
-      replyDrafts: []
+      replyDrafts: [],
+      contacts: []
     });
   },
   setLocale: (locale) => set({ locale }),
   setThemeId: (themeId) => set({ themeId }),
   setOnboardingDraft: (draft) => set({ onboardingDraft: draft }),
   setUserPersona: (persona) => set({ userPersona: persona }),
-  addContact: (contact) => set((state) => ({ contacts: [contact, ...state.contacts] })),
+  setContacts: (contacts) => set({ contacts }),
+  addContact: (contact) => set((state) => ({ contacts: [contact, ...state.contacts.filter((item) => item.id !== contact.id)] })),
+  removeContact: (contactId) => set((state) => ({ contacts: state.contacts.filter((item) => item.id !== contactId) })),
   setAnalysisFlow: ({ conversation, analysis, memoryPatch }) =>
     set({
       currentConversation: conversation,

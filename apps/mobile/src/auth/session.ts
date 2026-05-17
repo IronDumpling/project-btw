@@ -18,6 +18,10 @@ export async function syncBackendProfileFromSession(session: Session): Promise<A
 }
 
 export async function clearSupabaseAndLocalSession() {
-  await supabase.auth.signOut();
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    // Local session cleanup should still finish if the remote session is already gone.
+  }
   await useAppStore.getState().clearSession();
 }

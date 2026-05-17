@@ -1,9 +1,13 @@
 # Mobile iOS CI/CD
 
-The repo uses a least-effort GitHub Actions setup:
+The repo uses GitHub Actions for mobile validation and manual EAS builds.
 
-- automatic validation on changes to `mobile/ios/**`
-- manual EAS iOS builds through `workflow_dispatch`
+Repo-level CI/CD process details live in `docs/CICD_PROCESS.md`.
+
+Mobile-specific workflows:
+
+- automatic validation in `.github/workflows/ci.yml`
+- manual EAS iOS builds in `.github/workflows/mobile-ios.yml`
 
 ## Required GitHub Secret
 
@@ -17,10 +21,7 @@ Create it from your Expo account settings. The token is used only by the manual 
 
 ## Automatic Validation
 
-The validation job runs on pull requests and pushes touching:
-
-- `mobile/ios/**`
-- `.github/workflows/mobile-ios.yml`
+The validation job runs on pull requests and pushes to `main`.
 
 It runs:
 
@@ -28,6 +29,7 @@ It runs:
 npm ci
 npm run typecheck
 npm run doctor
+npm audit --audit-level=moderate --registry=https://registry.npmjs.org
 ```
 
 ## Manual iOS Build

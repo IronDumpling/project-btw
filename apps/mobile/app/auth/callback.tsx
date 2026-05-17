@@ -1,8 +1,11 @@
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
+import { ShieldCheck } from "lucide-react-native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { syncBackendProfileFromSession } from "@/auth/session";
+import { Card } from "@/components/Card";
+import { IconBadge } from "@/components/DesignSystem";
 import { Screen } from "@/components/Screen";
 import { useT } from "@/i18n/i18n";
 import { supabase } from "@/lib/supabase";
@@ -43,9 +46,14 @@ export default function AuthCallbackScreen() {
 
   return (
     <Screen>
-      <ActivityIndicator color={colors.accent} />
-      <Text style={styles.title}>{t("authCallbackTitle")}</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <Card>
+        <View style={styles.center}>
+          <IconBadge icon={ShieldCheck} />
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.title}>{t("authCallbackTitle")}</Text>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+        </View>
+      </Card>
     </Screen>
   );
 }
@@ -56,6 +64,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 22,
     fontWeight: "800",
     marginTop: spacing.sm
+  },
+  center: {
+    alignItems: "center",
+    gap: spacing.sm,
+    justifyContent: "center",
+    minHeight: 220
   },
   error: {
     color: colors.danger,

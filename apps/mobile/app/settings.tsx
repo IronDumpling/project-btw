@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import { Globe2, Palette, Server, ShieldCheck } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { mobileApi } from "@/api/client";
 import { Card } from "@/components/Card";
+import { IconBadge } from "@/components/DesignSystem";
+import { PrimaryButton } from "@/components/PrimaryButton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Screen } from "@/components/Screen";
 import { appConfig } from "@/config/env";
@@ -12,6 +16,7 @@ import { spacing, themeLabels, themes, type ThemeColors, type ThemeId } from "@/
 import { useTheme } from "@/theme/useTheme";
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const colors = useTheme();
   const styles = makeStyles(colors);
   const t = useT();
@@ -37,10 +42,12 @@ export default function SettingsScreen() {
 
   return (
     <RequireAuth>
-      <Screen>
-      <Text style={styles.title}>{t("settingsTitle")}</Text>
+      <Screen kicker={t("settingsEnvironment")} title={t("settingsTitle")} trailing={<IconBadge icon={Server} tone="lavender" />}>
       <Card>
-        <Text style={styles.cardTitle}>{t("settingsEnvironment")}</Text>
+        <View style={styles.cardHeader}>
+          <IconBadge icon={Server} tone="lavender" />
+          <Text style={styles.cardTitle}>{t("settingsEnvironment")}</Text>
+        </View>
         <Text style={styles.body}>{t("settingsAppEnv", { value: appConfig.appEnv })}</Text>
         <Text style={styles.body}>{t("settingsApi", { value: appConfig.apiBaseUrl })}</Text>
         <Text style={styles.body}>
@@ -48,7 +55,10 @@ export default function SettingsScreen() {
         </Text>
       </Card>
       <Card>
-        <Text style={styles.cardTitle}>{t("settingsTheme")}</Text>
+        <View style={styles.cardHeader}>
+          <IconBadge icon={Palette} />
+          <Text style={styles.cardTitle}>{t("settingsTheme")}</Text>
+        </View>
         <View style={styles.optionGrid}>
           {(Object.keys(themes) as ThemeId[]).map((id) => (
             <Pressable key={id} onPress={() => chooseTheme(id)} style={[styles.option, themeId === id && styles.optionSelected]}>
@@ -59,7 +69,10 @@ export default function SettingsScreen() {
         </View>
       </Card>
       <Card>
-        <Text style={styles.cardTitle}>{t("settingsLanguage")}</Text>
+        <View style={styles.cardHeader}>
+          <IconBadge icon={Globe2} tone="lavender" />
+          <Text style={styles.cardTitle}>{t("settingsLanguage")}</Text>
+        </View>
         <View style={styles.optionGrid}>
           <Pressable onPress={() => chooseLocale("en")} style={[styles.option, locale === "en" && styles.optionSelected]}>
             <Text style={styles.optionText}>{t("settingsEnglish")}</Text>
@@ -70,10 +83,14 @@ export default function SettingsScreen() {
         </View>
       </Card>
       <Card>
-        <Text style={styles.cardTitle}>{t("settingsPrivacy")}</Text>
+        <View style={styles.cardHeader}>
+          <IconBadge icon={ShieldCheck} />
+          <Text style={styles.cardTitle}>{t("settingsPrivacy")}</Text>
+        </View>
         <Text style={styles.body}>{t("settingsPrivacyUserInitiated")}</Text>
         <Text style={styles.body}>{t("settingsPrivacyScreenshots")}</Text>
         <Text style={styles.body}>{t("settingsPrivacyMemory")}</Text>
+        <PrimaryButton label={t("privacyTitle")} variant="secondary" onPress={() => router.push("/privacy")} />
       </Card>
       </Screen>
     </RequireAuth>
@@ -81,11 +98,6 @@ export default function SettingsScreen() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  title: {
-    color: colors.ink,
-    fontSize: 24,
-    fontWeight: "800"
-  },
   cardTitle: {
     color: colors.ink,
     fontSize: 17,
@@ -104,7 +116,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   option: {
     alignItems: "center",
     borderColor: colors.line,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     flexDirection: "row",
     gap: spacing.xs,
@@ -126,5 +138,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     height: 20,
     width: 20
+  },
+  cardHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm
   }
 });
