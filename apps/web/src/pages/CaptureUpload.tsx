@@ -83,19 +83,16 @@ export default function CaptureUpload() {
   const result = state.analyzeResult;
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 20px" }}>
+    <div className="page-container">
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button onClick={() => navigate("/dashboard")} style={{ background: "none", border: "none", color: "var(--btw-text-muted)", cursor: "pointer", fontSize: 13, padding: 0 }}>
-          ← 返回
-        </button>
-        <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0, color: "var(--btw-text)" }}>上传截图分析</h2>
+        <button className="back-btn" onClick={() => navigate("/dashboard")}>← 返回</button>
+        <h2 className="view-heading" style={{ margin: 0 }}>上传截图分析</h2>
       </div>
 
-      {/* Upload button */}
       {(state.status === "idle" || state.status === "error") && (
         <button
           onClick={handleUpload}
-          style={{ width: "100%", padding: "48px 20px", background: "var(--btw-surface)", border: "2px dashed var(--btw-border)", borderRadius: 12, fontSize: 15, color: "var(--btw-text-muted)", cursor: "pointer", textAlign: "center" }}
+          style={{ width: "100%", padding: "48px 20px", background: "var(--btw-bg-card)", border: "2px dashed var(--btw-border)", borderRadius: 12, fontSize: 15, color: "var(--btw-text-muted)", cursor: "pointer", textAlign: "center" }}
         >
           点击选择截图
           <br />
@@ -104,37 +101,26 @@ export default function CaptureUpload() {
       )}
 
       {state.status === "error" && state.error && (
-        <div style={{ marginTop: 12, padding: "10px 14px", background: "var(--btw-surface-2)", border: "1px solid var(--btw-danger)", borderRadius: 8, fontSize: 13, color: "var(--btw-danger)" }}>
+        <div className="dashboard-card" style={{ borderColor: "var(--btw-error)", color: "var(--btw-error)", marginTop: 12 }}>
           {state.error}
         </div>
       )}
 
-      {/* Analyzing */}
-      {state.status === "analyzing" && (
+      {(state.status === "analyzing" || state.status === "reasoning") && (
         <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--btw-text-muted)", fontSize: 14 }}>
           <div className="app-loading-spinner" style={{ margin: "0 auto 16px" }} />
-          识别截图内容…
+          {state.status === "analyzing" ? "识别截图内容…" : "分析对话、生成回复建议…"}
         </div>
       )}
 
-      {/* Reasoning */}
-      {state.status === "reasoning" && (
-        <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--btw-text-muted)", fontSize: 14 }}>
-          <div className="app-loading-spinner" style={{ margin: "0 auto 16px" }} />
-          分析对话、生成回复建议…
-        </div>
-      )}
-
-      {/* Results */}
       {state.status === "done" && result && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Contact detected */}
           {result.contact_name && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 13, color: "var(--btw-text-muted)" }}>联系人</span>
+              <span className="view-section-label" style={{ marginBottom: 0 }}>联系人</span>
               <span style={{ fontSize: 14, fontWeight: 600, color: "var(--btw-text)" }}>{result.contact_name}</span>
               {result.platform && (
-                <span style={{ fontSize: 11, color: "var(--btw-text-muted)", background: "var(--btw-surface)", padding: "2px 6px", borderRadius: 4 }}>{result.platform}</span>
+                <span className="contact-platform">{result.platform}</span>
               )}
               {state.activeContactId && (
                 <button
@@ -147,25 +133,25 @@ export default function CaptureUpload() {
             </div>
           )}
 
-          {/* Subtext */}
           {state.subtextResult && (
-            <div style={{ background: "var(--btw-surface)", border: "1px solid var(--btw-border)", borderRadius: 10, padding: "14px 16px" }}>
-              <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--btw-text-muted)", marginBottom: 8 }}>潜台词解读</p>
-              <p style={{ fontSize: 14, color: "var(--btw-text)", lineHeight: 1.65, margin: 0 }}>{state.subtextResult}</p>
+            <div className="view-section">
+              <p className="capture-card-section-label">潜台词解读</p>
+              <p className="capture-card-subtext" style={{ fontStyle: "normal" }}>{state.subtextResult}</p>
             </div>
           )}
 
-          {/* Reply drafts */}
           {state.replyDrafts.length > 0 && (
-            <div style={{ background: "var(--btw-surface)", border: "1px solid var(--btw-border)", borderRadius: 10, padding: "14px 16px" }}>
-              <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--btw-text-muted)", marginBottom: 12 }}>回复建议</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="view-section">
+              <p className="capture-card-section-label">回复建议</p>
+              <div className="capture-drafts">
                 {state.replyDrafts.map((draft, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, background: "var(--btw-surface-2)", borderRadius: 8, padding: "10px 12px" }}>
-                    <p style={{ flex: 1, fontSize: 14, color: "var(--btw-text)", margin: 0, lineHeight: 1.5 }}>{draft}</p>
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <button className="capture-draft-btn" style={{ flex: 1 }} onClick={() => copyReply(draft, i)}>
+                      {draft}
+                    </button>
                     <button
                       onClick={() => copyReply(draft, i)}
-                      style={{ flexShrink: 0, fontSize: 12, color: copied === i ? "var(--btw-success)" : "var(--btw-text-muted)", background: "none", border: "none", cursor: "pointer", padding: "0 2px" }}
+                      style={{ flexShrink: 0, fontSize: 12, color: copied === i ? "var(--btw-success)" : "var(--btw-text-muted)", background: "none", border: "none", cursor: "pointer", padding: "0 2px", alignSelf: "center" }}
                     >
                       {copied === i ? "已复制" : "复制"}
                     </button>
@@ -175,13 +161,7 @@ export default function CaptureUpload() {
             </div>
           )}
 
-          {/* Upload again */}
-          <button
-            onClick={handleUpload}
-            style={{ padding: "10px 16px", background: "none", border: "1px solid var(--btw-border)", borderRadius: 8, fontSize: 13, color: "var(--btw-text-muted)", cursor: "pointer" }}
-          >
-            再上传一张
-          </button>
+          <button className="view-btn" onClick={handleUpload}>再上传一张</button>
         </div>
       )}
     </div>

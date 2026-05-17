@@ -151,85 +151,59 @@ export default function ContactDetail() {
 
   if (!contactId) {
     return (
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 20px", color: "var(--btw-text-muted)", fontSize: 14 }}>
-        Select a contact from the list.
+      <div className="page-container">
+        <p className="view-empty">Select a contact from the list.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 20px" }}>
+    <div className="page-container">
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button
-          onClick={() => navigate("/dashboard")}
-          style={{ background: "none", border: "none", color: "var(--btw-text-muted)", cursor: "pointer", fontSize: 13, padding: 0 }}
-        >
-          ← 返回
-        </button>
-        <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0, color: "var(--btw-text)" }}>
+        <button className="back-btn" onClick={() => navigate("/dashboard")}>← 返回</button>
+        <h2 className="view-heading" style={{ margin: 0 }}>
           {loading ? "Loading…" : displayName}
         </h2>
       </div>
 
       {showBadge && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "var(--btw-surface)", border: "1px solid var(--btw-accent)", borderRadius: 8, padding: "10px 14px", marginBottom: 16 }}>
-          <span style={{ flex: 1, fontSize: 13, color: "var(--btw-text)" }}>
+        <div className="persona-badge" style={{ marginBottom: 16 }}>
+          <span style={{ flex: 1 }}>
             {updateCount} new captures — persona can be updated
           </span>
           <button
+            className="persona-update-btn"
             disabled={captureState.personaPatchStatus === "patching"}
             onClick={handlePersonaPatch}
-            style={{ fontSize: 12, padding: "4px 10px", background: "var(--btw-accent)", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}
           >
             {captureState.personaPatchStatus === "patching" ? "Updating…" : "Update Persona"}
           </button>
           {captureState.personaPatchStatus === "error" && captureState.personaPatchError && (
-            <p style={{ color: "var(--btw-danger)", fontSize: 12, marginTop: 4 }}>
-              {captureState.personaPatchError}
-            </p>
+            <p className="persona-patch-error">{captureState.personaPatchError}</p>
           )}
         </div>
       )}
 
       {memory && memory.trim().length > 0 && (
-        <div style={{ background: "var(--btw-surface)", border: "1px solid var(--btw-border)", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--btw-text-muted)", marginBottom: 8 }}>Memory</p>
-          <pre style={{ fontSize: 13, color: "var(--btw-text)", whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{memory}</pre>
+        <div className="dashboard-card">
+          <p className="view-section-label">Memory</p>
+          <pre className="view-persona-text" style={{ margin: 0 }}>{memory}</pre>
         </div>
       )}
 
       {persona ? (
-        <div style={{ background: "var(--btw-surface)", border: "1px solid var(--btw-border)", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--btw-text-muted)", marginBottom: 8 }}>Persona</p>
-          <pre style={{ fontSize: 13, color: "var(--btw-text)", whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{persona}</pre>
+        <div className="dashboard-card">
+          <p className="view-section-label">Persona</p>
+          <pre className="view-persona-text" style={{ margin: 0 }}>{persona}</pre>
         </div>
       ) : (
-        !loading && (
-          <p style={{ fontSize: 13, color: "var(--btw-text-muted)", marginBottom: 16 }}>No persona yet.</p>
-        )
+        !loading && <p className="view-empty">No persona yet.</p>
       )}
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          onClick={handleDelete}
-          style={{ fontSize: 13, padding: "6px 14px", background: "none", border: "1px solid var(--btw-danger)", borderRadius: 6, color: "var(--btw-danger)", cursor: "pointer" }}
-        >
-          Delete
-        </button>
-        <button
-          disabled
-          title="Coming soon"
-          style={{ fontSize: 13, padding: "6px 14px", background: "none", border: "1px solid var(--btw-border)", borderRadius: 6, color: "var(--btw-text-muted)", cursor: "not-allowed" }}
-        >
-          Merge
-        </button>
-        <button
-          disabled
-          title="Coming soon"
-          style={{ fontSize: 13, padding: "6px 14px", background: "none", border: "1px solid var(--btw-border)", borderRadius: 6, color: "var(--btw-text-muted)", cursor: "not-allowed" }}
-        >
-          Split
-        </button>
+      <div className="contact-actions">
+        <button className="contact-action-btn danger" onClick={handleDelete}>Delete</button>
+        <button className="contact-action-btn" disabled title="Coming soon">Merge</button>
+        <button className="contact-action-btn" disabled title="Coming soon">Split</button>
       </div>
     </div>
   );

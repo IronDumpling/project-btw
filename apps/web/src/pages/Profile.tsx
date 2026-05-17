@@ -36,24 +36,17 @@ export default function Profile() {
   }
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 20px" }}>
+    <div className="page-container">
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <button
-          onClick={() => navigate("/dashboard")}
-          style={{ background: "none", border: "none", color: "var(--btw-text-muted)", cursor: "pointer", fontSize: 13, padding: 0 }}
-        >
-          ← 返回
-        </button>
-        <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0, color: "var(--btw-text)" }}>My Profile</h2>
+        <button className="back-btn" onClick={() => navigate("/dashboard")}>← 返回</button>
+        <h2 className="view-heading" style={{ margin: 0 }}>My Profile</h2>
       </div>
 
-      {loading && (
-        <p style={{ fontSize: 13, color: "var(--btw-text-muted)" }}>Loading…</p>
-      )}
+      {loading && <p className="view-empty">Loading…</p>}
 
       {!loading && !persona && (
         <>
-          <p style={{ fontSize: 13, color: "var(--btw-text-muted)", marginBottom: 16 }}>
+          <p className="view-empty" style={{ marginBottom: 16 }}>
             No profile yet. Complete onboarding to build your persona.
           </p>
           <button
@@ -67,22 +60,10 @@ export default function Profile() {
 
       {persona && (
         <>
-          <div style={{ background: "var(--btw-surface)", border: "1px solid var(--btw-border)", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-            <pre style={{ fontSize: 13, color: "var(--btw-text)", whiteSpace: "pre-wrap", margin: 0, lineHeight: 1.6 }}>{persona}</pre>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={handleDelete}
-              style={{ fontSize: 13, padding: "6px 14px", background: "none", border: "1px solid var(--btw-danger)", borderRadius: 6, color: "var(--btw-danger)", cursor: "pointer" }}
-            >
-              Delete
-            </button>
-            <button
-              onClick={handleEdit}
-              style={{ fontSize: 13, padding: "6px 14px", background: "none", border: "1px solid var(--btw-border)", borderRadius: 6, color: "var(--btw-text)", cursor: "pointer" }}
-            >
-              Edit Profile
-            </button>
+          <pre className="persona-content">{persona}</pre>
+          <div className="contact-actions">
+            <button className="contact-action-btn danger" onClick={handleDelete}>Delete</button>
+            <button className="contact-action-btn" onClick={handleEdit}>Edit Profile</button>
           </div>
         </>
       )}

@@ -245,3 +245,119 @@ body {
   color: var(--btw-text-muted);
   margin-top: 4px;
 }
+
+/* ── Shared page/view primitives ──────────────────────────── */
+
+.page-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.view-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--btw-text);
+  margin-bottom: 14px;
+}
+.view-section { margin-bottom: 16px; }
+.view-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--btw-text-muted);
+  margin-bottom: 6px;
+}
+.view-persona-text {
+  font-size: 12px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  color: var(--btw-text);
+}
+.view-empty {
+  color: var(--btw-text-muted);
+  font-size: 13px;
+}
+.view-btn {
+  padding: 6px 14px;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border);
+  border-radius: var(--btw-radius-xs);
+  color: var(--btw-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.view-btn:hover { border-color: var(--btw-accent); }
+
+.view-health-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  background: var(--btw-text-muted);
+}
+.view-health-dot.ok  { background: var(--btw-success); }
+.view-health-dot.err { background: var(--btw-error); }
+
+.contact-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--btw-border-subtle);
+}
+.contact-action-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: var(--btw-radius);
+  border: 1px solid var(--btw-border-subtle);
+  background: transparent;
+  color: var(--btw-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.contact-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.contact-action-btn.danger { border-color: var(--btw-error); color: var(--btw-error); }
+.contact-action-btn.danger:hover {
+  background: color-mix(in srgb, var(--btw-error) 12%, transparent);
+}
+
+.capture-card-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--btw-text-muted);
+  margin-bottom: 6px;
+}
+.capture-card-subtext {
+  background: color-mix(in srgb, var(--btw-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--btw-accent) 25%, transparent);
+  border-radius: var(--btw-radius-sm);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--btw-text);
+  font-style: italic;
+}
+.capture-draft-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--btw-bg-card);
+  border: 1px solid var(--btw-border-faint);
+  border-radius: var(--btw-radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--btw-text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.capture-draft-btn:hover {
+  border-color: var(--btw-border);
+  background: var(--btw-bg-hover);
+}
+.capture-drafts { display: flex; flex-direction: column; gap: 6px; }
