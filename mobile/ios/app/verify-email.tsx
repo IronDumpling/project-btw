@@ -1,8 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { MailCheck } from "lucide-react-native";
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { syncBackendProfileFromSession } from "@/auth/session";
 import { Card } from "@/components/Card";
+import { IconBadge } from "@/components/DesignSystem";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { Screen } from "@/components/Screen";
 import { useT } from "@/i18n/i18n";
@@ -61,11 +63,7 @@ export default function VerifyEmailScreen() {
   }
 
   return (
-    <Screen>
-      <View style={styles.hero}>
-        <Text style={styles.title}>{t("verifyTitle")}</Text>
-        <Text style={styles.body}>{t("verifyBody")}</Text>
-      </View>
+    <Screen title={t("verifyTitle")} subtitle={t("verifyBody")} trailing={<IconBadge icon={MailCheck} />}>
       <Card>
         <View style={styles.field}>
           <Text style={styles.label}>{t("loginEmail")}</Text>
@@ -111,7 +109,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   input: {
     borderColor: colors.line,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     color: colors.ink,
     fontSize: 15,

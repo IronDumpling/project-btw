@@ -12,6 +12,8 @@ from pydantic import BaseModel, Field
 import supabase_mobile_store
 from config import LEARNING_MODELS, REASONING_MODELS
 from utils import complete_with_fallback
+from routers.perception import AnalyzeRequest as PerceptionAnalyzeRequest
+from routers.perception import analyze_screenshot
 
 router = APIRouter(prefix="/v1/mobile", tags=["mobile"])
 bearer = HTTPBearer(auto_error=False)
@@ -130,11 +132,42 @@ class MemoryPatch(BaseModel):
     createdAt: str
 
 
+class Contact(BaseModel):
+    id: str
+    displayName: str
+    aliases: list[str] = []
+    relationshipType: str = ""
+    notes: str = ""
+    localMemorySummary: str = ""
+    lastAnalysisAt: str = ""
+    syncStatus: str = "synced"
+    createdAt: str = ""
+    updatedAt: str = ""
+
+
+class ContactRequest(BaseModel):
+    displayName: str = Field(min_length=1)
+    aliases: list[str] = []
+    relationshipType: str = ""
+    notes: str = ""
+    localMemorySummary: str = ""
+
+
+class ContactPatch(BaseModel):
+    displayName: str | None = None
+    aliases: list[str] | None = None
+    relationshipType: str | None = None
+    notes: str | None = None
+    localMemorySummary: str | None = None
+
+
 class ImportAnalyzeRequest(BaseModel):
     sourceType: str = "text"
     rawText: str | None = None
+    screenshotDataUri: str | None = None
     localScreenshotUri: str | None = None
     contactId: str | None = None
+    contactName: str | None = None
     locale: str = "en"
 
 
@@ -171,6 +204,18 @@ class MemoryCommitRequest(BaseModel):
     patch: MemoryPatch
     confirm: bool = False
     locale: str = "en"
+
+
+class MemoryPatchUpdateRequest(BaseModel):
+    status: str
+    proposedAdditions: list[str] | None = None
+
+
+class PrivacyExportResponse(BaseModel):
+    profile: dict[str, Any]
+    contacts: list[dict[str, Any]]
+    memoryPatches: list[dict[str, Any]]
+    savedReplies: list[dict[str, Any]] = []
 
 
 def current_token(
@@ -227,6 +272,23 @@ async def update_me(req: ProfilePatch, context: Annotated[dict[str, Any], Depend
 @router.post("/auth/logout")
 async def logout(_: Annotated[str, Depends(current_token)]):
     return {"status": "ok"}
+
+
+@router.get("/privacy/export", response_model=PrivacyExportResponse)
+async def export_privacy_data(context: Annotated[dict[str, Any], Depends(current_context)]):
+    try:
+        return await supabase_mobile_store.export_user_data(context["token"], context["auth_user"])
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "privacy_export_failed", "message": str(exc)}) from exc
+
+
+@router.delete("/account")
+async def delete_account(context: Annotated[dict[str, Any], Depends(current_context)]):
+    try:
+        await supabase_mobile_store.delete_account(context["token"], context["auth_user"])
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "account_delete_failed", "message": str(exc)}) from exc
+    return {"status": "deleted"}
 
 
 def _prompt_text(relative_path: str) -> str:
@@ -362,12 +424,20 @@ def _language_instruction(locale: str) -> str:
 def _mobile_text(locale: str, key: str) -> str:
     messages = {
         "text_import_only": {
-            "en": "Paste-text import is enabled first.",
-            "zh": "当前优先支持粘贴文本导入。"
+            "en": "Use pasted text or choose a screenshot first.",
+            "zh": "请先粘贴文本或选择截图。"
         },
         "empty_conversation": {
             "en": "Paste a conversation first.",
             "zh": "请先粘贴聊天内容。"
+        },
+        "empty_screenshot": {
+            "en": "Choose a screenshot first.",
+            "zh": "请先选择截图。"
+        },
+        "no_messages_found": {
+            "en": "No chat messages were detected in this screenshot.",
+            "zh": "这张截图中没有识别到聊天消息。"
         },
         "missing_analysis": {
             "en": "Run a conversation analysis first.",
@@ -392,6 +462,10 @@ def _mobile_text(locale: str, key: str) -> str:
         "memory_heading": {
             "en": "## Approved Relationship Memory",
             "zh": "## 已确认的关系记忆"
+        },
+        "relationship_default": {
+            "en": "Relationship",
+            "zh": "关系对象"
         },
     }
     lang = "zh" if locale.lower().startswith("zh") else "en"
@@ -524,30 +598,28 @@ async def delete_persona(context: Annotated[dict[str, Any], Depends(current_cont
     return {"status": "ok", "user": updated_user}
 
 
-@router.post("/import/analyze", response_model=ImportAnalyzeResponse)
-async def analyze_import(
+async def _analyze_import_messages(
+    *,
     req: ImportAnalyzeRequest,
-    context: Annotated[dict[str, Any], Depends(current_context)],
-):
-    if req.sourceType != "text":
-        raise HTTPException(status_code=400, detail={"error": "text_import_only", "message": _mobile_text(req.locale, "text_import_only")})
-    raw_text = (req.rawText or "").strip()
-    if not raw_text:
-        raise HTTPException(status_code=400, detail={"error": "empty_conversation", "message": _mobile_text(req.locale, "empty_conversation")})
-
-    messages = _parse_pasted_messages(raw_text)
+    context: dict[str, Any],
+    messages: list[dict[str, str]],
+    contact_id: str,
+    raw_text: str | None,
+    local_screenshot_uri: str | None,
+    confidence: float,
+    model_prefix: str = "",
+) -> dict[str, Any]:
     conversation_id = str(uuid.uuid4())
     analysis_id = str(uuid.uuid4())
-    contact_id = req.contactId or "default"
     conversation = ImportedConversation(
         id=conversation_id,
-        sourceType="text",
+        sourceType=req.sourceType,
         sourceTimestamp=_now_iso(),
         contactId=contact_id,
         messages=messages,
         rawText=raw_text,
-        localScreenshotUri=None,
-        confidence=0.75,
+        localScreenshotUri=local_screenshot_uri,
+        confidence=confidence,
     )
 
     prompt = f"""
@@ -595,15 +667,76 @@ Rules:
     evidence = data.get("evidence", [])
     memory_patch = None
     if isinstance(additions, list) and additions:
-        memory_patch = MemoryPatch(
-            id=str(uuid.uuid4()),
-            contactId=contact_id,
-            proposedAdditions=[str(item) for item in additions[:5]],
-            evidence=[str(item) for item in evidence[:5]] if isinstance(evidence, list) else [],
-            status="pending",
-            createdAt=_now_iso(),
+        try:
+            memory_patch = await supabase_mobile_store.create_memory_patch(
+                context["token"],
+                context["auth_user"],
+                contact_id=contact_id,
+                proposed_additions=[str(item) for item in additions[:5]],
+                evidence=[str(item) for item in evidence[:5]] if isinstance(evidence, list) else [],
+            )
+        except supabase_mobile_store.SupabaseMobileError:
+            memory_patch = MemoryPatch(
+                id=str(uuid.uuid4()),
+                contactId=contact_id,
+                proposedAdditions=[str(item) for item in additions[:5]],
+                evidence=[str(item) for item in evidence[:5]] if isinstance(evidence, list) else [],
+                status="pending",
+                createdAt=_now_iso(),
+            ).model_dump()
+    return {"conversation": conversation, "analysis": analysis, "memoryPatch": memory_patch, "model": f"{model_prefix}{response.model}"}
+
+
+@router.post("/import/analyze", response_model=ImportAnalyzeResponse)
+async def analyze_import(
+    req: ImportAnalyzeRequest,
+    context: Annotated[dict[str, Any], Depends(current_context)],
+):
+    if req.sourceType == "text":
+        raw_text = (req.rawText or "").strip()
+        if not raw_text:
+            raise HTTPException(status_code=400, detail={"error": "empty_conversation", "message": _mobile_text(req.locale, "empty_conversation")})
+        contact = await supabase_mobile_store.find_or_create_contact(
+            context["token"],
+            context["auth_user"],
+            contact_id=req.contactId,
+            display_name=req.contactName or _mobile_text(req.locale, "relationship_default"),
         )
-    return {"conversation": conversation, "analysis": analysis, "memoryPatch": memory_patch, "model": response.model}
+        return await _analyze_import_messages(
+            req=req,
+            context=context,
+            messages=_parse_pasted_messages(raw_text),
+            contact_id=contact["id"],
+            raw_text=raw_text,
+            local_screenshot_uri=None,
+            confidence=0.75,
+        )
+
+    if req.sourceType == "screenshot":
+        if not req.screenshotDataUri:
+            raise HTTPException(status_code=400, detail={"error": "empty_screenshot", "message": _mobile_text(req.locale, "empty_screenshot")})
+        perception = await analyze_screenshot(PerceptionAnalyzeRequest(screenshot=req.screenshotDataUri, window_title=req.contactName or "mobile import"))
+        messages = [message.model_dump() for message in perception.messages]
+        if not messages:
+            raise HTTPException(status_code=400, detail={"error": "no_messages_found", "message": _mobile_text(req.locale, "no_messages_found")})
+        contact = await supabase_mobile_store.find_or_create_contact(
+            context["token"],
+            context["auth_user"],
+            contact_id=req.contactId,
+            display_name=req.contactName or perception.contact_name or _mobile_text(req.locale, "relationship_default"),
+        )
+        return await _analyze_import_messages(
+            req=req,
+            context=context,
+            messages=messages,
+            contact_id=contact["id"],
+            raw_text=None,
+            local_screenshot_uri=req.localScreenshotUri,
+            confidence=perception.confidence,
+            model_prefix=f"{perception.vision_model} + ",
+        )
+
+    raise HTTPException(status_code=400, detail={"error": "unsupported_import", "message": _mobile_text(req.locale, "text_import_only")})
 
 
 @router.post("/reply/generate", response_model=ReplyGenerateResponse)
@@ -678,11 +811,101 @@ async def commit_memory(
             context["auth_user"],
             memory_markdown=next_memory,
         )
+        await supabase_mobile_store.update_memory_patch_status(
+            context["token"],
+            context["auth_user"],
+            req.patch.id,
+            status="approved",
+            proposed_additions=additions,
+        )
+        if req.patch.contactId and req.patch.contactId != "default":
+            await supabase_mobile_store.update_contact(
+                context["token"],
+                context["auth_user"],
+                req.patch.contactId,
+                memory_summary="\n".join(additions),
+            )
     except supabase_mobile_store.SupabaseMobileError as exc:
         raise HTTPException(status_code=503, detail={"error": "profile_update_failed", "message": str(exc)}) from exc
     return {"memorySummary": "\n".join(additions), "user": updated_user}
 
 
+@router.get("/memory/patches")
+async def list_memory_patches(context: Annotated[dict[str, Any], Depends(current_context)], status: str | None = None):
+    try:
+        patches = await supabase_mobile_store.list_memory_patches(context["token"], context["auth_user"]["id"], status=status)
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "memory_patch_list_failed", "message": str(exc)}) from exc
+    return {"patches": patches}
+
+
+@router.patch("/memory/patches/{patch_id}")
+async def update_memory_patch(
+    patch_id: str,
+    req: MemoryPatchUpdateRequest,
+    context: Annotated[dict[str, Any], Depends(current_context)],
+):
+    if req.status not in {"pending", "approved", "edited", "rejected"}:
+        raise HTTPException(status_code=400, detail={"error": "invalid_status"})
+    try:
+        patch = await supabase_mobile_store.update_memory_patch_status(
+            context["token"],
+            context["auth_user"],
+            patch_id,
+            status=req.status,
+            proposed_additions=req.proposedAdditions,
+        )
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "memory_patch_update_failed", "message": str(exc)}) from exc
+    return {"patch": patch}
+
+
 @router.get("/contacts")
-async def list_contacts(_: Annotated[dict[str, Any], Depends(current_context)]):
-    return {"contacts": []}
+async def list_contacts(context: Annotated[dict[str, Any], Depends(current_context)]):
+    try:
+        contacts = await supabase_mobile_store.list_contacts(context["token"], context["auth_user"]["id"])
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "contact_list_failed", "message": str(exc)}) from exc
+    return {"contacts": contacts}
+
+
+@router.post("/contacts", response_model=Contact)
+async def create_contact(req: ContactRequest, context: Annotated[dict[str, Any], Depends(current_context)]):
+    try:
+        return await supabase_mobile_store.create_contact(
+            context["token"],
+            context["auth_user"],
+            display_name=req.displayName,
+            aliases=req.aliases,
+            relationship_type=req.relationshipType,
+            notes=req.notes,
+            memory_summary=req.localMemorySummary,
+        )
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "contact_create_failed", "message": str(exc)}) from exc
+
+
+@router.patch("/contacts/{contact_id}", response_model=Contact)
+async def update_contact(contact_id: str, req: ContactPatch, context: Annotated[dict[str, Any], Depends(current_context)]):
+    try:
+        return await supabase_mobile_store.update_contact(
+            context["token"],
+            context["auth_user"],
+            contact_id,
+            display_name=req.displayName,
+            aliases=req.aliases,
+            relationship_type=req.relationshipType,
+            notes=req.notes,
+            memory_summary=req.localMemorySummary,
+        )
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "contact_update_failed", "message": str(exc)}) from exc
+
+
+@router.delete("/contacts/{contact_id}")
+async def delete_contact(contact_id: str, context: Annotated[dict[str, Any], Depends(current_context)]):
+    try:
+        await supabase_mobile_store.delete_contact(context["token"], context["auth_user"], contact_id)
+    except supabase_mobile_store.SupabaseMobileError as exc:
+        raise HTTPException(status_code=503, detail={"error": "contact_delete_failed", "message": str(exc)}) from exc
+    return {"status": "ok"}

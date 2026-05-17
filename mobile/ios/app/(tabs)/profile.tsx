@@ -1,9 +1,11 @@
 import { useRouter } from "expo-router";
+import { LogOut, ShieldCheck, Sparkles, UserRound } from "lucide-react-native";
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { mobileApi } from "@/api/client";
 import { clearSupabaseAndLocalSession } from "@/auth/session";
 import { Card } from "@/components/Card";
+import { IconBadge } from "@/components/DesignSystem";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Screen } from "@/components/Screen";
@@ -69,13 +71,21 @@ export default function ProfileScreen() {
 
   return (
     <RequireAuth>
-      <Screen>
-        <Text style={styles.title}>{t("profileTitle")}</Text>
+      <Screen kicker={t("profileAccount")} title={t("profileTitle")} trailing={<IconBadge icon={UserRound} />}>
+        <View style={styles.avatarHero}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{(displayName || user?.email || "B").slice(0, 1).toUpperCase()}</Text>
+          </View>
+          <Text style={styles.avatarTitle}>{displayName || user?.email}</Text>
+          <Text style={styles.verified}>{user?.email_verified ? t("profileVerified") : t("profileUnverified")}</Text>
+        </View>
 
         <Card>
-          <Text style={styles.cardTitle}>{t("profileAccount")}</Text>
+          <View style={styles.cardHeader}>
+            <IconBadge icon={ShieldCheck} />
+            <Text style={styles.cardTitle}>{t("profileAccount")}</Text>
+          </View>
           <Text style={styles.body}>{user?.email}</Text>
-          <Text style={styles.verified}>{user?.email_verified ? t("profileVerified") : t("profileUnverified")}</Text>
           <View style={styles.field}>
             <Text style={styles.label}>{t("profileDisplayName")}</Text>
             <TextInput onChangeText={setDisplayName} placeholderTextColor={colors.muted} style={styles.input} value={displayName} />
@@ -86,7 +96,10 @@ export default function ProfileScreen() {
 
         {user?.persona_markdown ? (
           <Card>
-            <Text style={styles.cardTitle}>{t("profilePersona")}</Text>
+            <View style={styles.cardHeader}>
+              <IconBadge icon={Sparkles} tone="lavender" />
+              <Text style={styles.cardTitle}>{t("profilePersona")}</Text>
+            </View>
             <Text style={styles.markdown}>{user.persona_markdown}</Text>
             {user.memory_markdown ? (
               <>
@@ -110,8 +123,12 @@ export default function ProfileScreen() {
         <Card>
           <Text style={styles.cardTitle}>{t("settingsPrivacy")}</Text>
           <Text style={styles.body}>{t("profilePrivacyBody")}</Text>
+          <PrimaryButton label={t("privacyTitle")} variant="secondary" onPress={() => router.push("/privacy")} />
           <PrimaryButton label={t("settingsTitle")} variant="secondary" onPress={() => router.push("/settings")} />
-          <PrimaryButton label={t("profileLogout")} variant="secondary" onPress={logout} />
+          <View style={styles.logoutRow}>
+            <LogOut color={colors.danger} size={18} />
+            <PrimaryButton label={t("profileLogout")} variant="danger" onPress={logout} />
+          </View>
         </Card>
       </Screen>
     </RequireAuth>
@@ -119,10 +136,30 @@ export default function ProfileScreen() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  title: {
+  avatarHero: {
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm
+  },
+  avatar: {
+    alignItems: "center",
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.line,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 124,
+    justifyContent: "center",
+    width: 124
+  },
+  avatarText: {
+    color: colors.accent,
+    fontSize: 44,
+    fontWeight: "900"
+  },
+  avatarTitle: {
     color: colors.ink,
-    fontSize: 24,
-    fontWeight: "800"
+    fontSize: 20,
+    fontWeight: "900"
   },
   cardTitle: {
     color: colors.ink,
@@ -145,6 +182,11 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   actions: {
     gap: spacing.sm
   },
+  cardHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm
+  },
   label: {
     color: colors.ink,
     fontSize: 14,
@@ -152,7 +194,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   input: {
     borderColor: colors.line,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     color: colors.ink,
     fontSize: 15,
@@ -161,11 +203,16 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   markdown: {
     backgroundColor: colors.canvas,
-    borderRadius: 8,
+    borderRadius: 16,
     color: colors.ink,
     fontSize: 13,
     lineHeight: 19,
     padding: spacing.sm
+  },
+  logoutRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm
   },
   error: {
     color: colors.danger,

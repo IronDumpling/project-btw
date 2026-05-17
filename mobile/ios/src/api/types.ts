@@ -94,11 +94,21 @@ export type Contact = {
   id: string;
   displayName: string;
   aliases: string[];
-  relationshipType?: string;
-  notes?: string;
-  localMemorySummary?: string;
-  lastAnalysisAt?: string;
+  relationshipType: string;
+  notes: string;
+  localMemorySummary: string;
+  lastAnalysisAt: string;
   syncStatus: "local" | "synced" | "pending";
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ContactInput = {
+  displayName: string;
+  aliases: string[];
+  relationshipType: string;
+  notes: string;
+  localMemorySummary?: string;
 };
 
 export type ImportedConversation = {
@@ -109,6 +119,7 @@ export type ImportedConversation = {
   messages: Array<{ role: "user" | "contact"; text: string }>;
   rawText?: string;
   localScreenshotUri?: string;
+  screenshotDataUri?: string;
   confidence: number;
 };
 
@@ -152,4 +163,11 @@ export type ImportAnalysisResponse = {
 export type ReplyGenerationResponse = {
   drafts: ReplyDraft[];
   model: string;
+};
+
+export type PrivacyExport = {
+  profile: AuthUser;
+  contacts: Contact[];
+  memoryPatches: MemoryPatch[];
+  savedReplies: Array<Record<string, unknown>>;
 };

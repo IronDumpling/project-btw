@@ -61,7 +61,7 @@ export function ChoiceGroup({ label, options, mode, value, onChange, max }: Prop
                 style={[styles.option, checked && styles.optionSelected]}
               >
                 <Text style={[styles.mark, checked && styles.markSelected]}>{checked ? "✓" : ""}</Text>
-                <Text style={styles.optionText}>{option.label}</Text>
+                <Text style={[styles.optionText, checked && styles.optionTextSelected]}>{option.label}</Text>
               </Pressable>
             );
           })}
@@ -108,20 +108,23 @@ const makeStyles = (theme: ThemeColors) => StyleSheet.create({
     fontWeight: "800"
   },
   options: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.xs
   },
   option: {
     alignItems: "center",
     borderColor: theme.line,
-    borderRadius: 8,
+    borderRadius: 999,
     borderWidth: 1,
     flexDirection: "row",
     gap: spacing.sm,
     minHeight: 42,
-    paddingHorizontal: spacing.sm
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs
   },
   optionSelected: {
-    backgroundColor: theme.accentSoft,
+    backgroundColor: theme.accent,
     borderColor: theme.accent
   },
   mark: {
@@ -137,11 +140,15 @@ const makeStyles = (theme: ThemeColors) => StyleSheet.create({
     width: 20
   },
   markSelected: {
-    borderColor: theme.accent
+    borderColor: theme.buttonText,
+    color: theme.buttonText
   },
   optionText: {
     color: theme.ink,
-    flex: 1,
     fontSize: 15
+  },
+  optionTextSelected: {
+    color: theme.buttonText,
+    fontWeight: "800"
   }
 });

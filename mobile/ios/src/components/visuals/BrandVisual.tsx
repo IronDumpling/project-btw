@@ -1,39 +1,7 @@
-import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, G, Path, Rect } from "react-native-svg";
 import { useTheme } from "@/theme/useTheme";
 
 type IconName = "home" | "import" | "coach" | "contacts" | "profile" | "settings";
-
-export function AuthHeroVisual() {
-  const colors = useTheme();
-  return (
-    <Svg width="100%" height={170} viewBox="0 0 340 170" accessibilityRole="image">
-      <Defs>
-        <LinearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor={colors.accentSoft} />
-          <Stop offset="1" stopColor={colors.coralSoft} />
-        </LinearGradient>
-      </Defs>
-      <Rect x="18" y="18" width="304" height="134" rx="26" fill="url(#hero)" />
-      <Circle cx="98" cy="84" r="38" fill={colors.surface} opacity="0.86" />
-      <Circle cx="238" cy="84" r="38" fill={colors.surface} opacity="0.86" />
-      <Path
-        d="M129 87c18 22 62 22 80 0"
-        fill="none"
-        stroke={colors.accent}
-        strokeLinecap="round"
-        strokeWidth="9"
-      />
-      <Path
-        d="M92 73c9-10 20-10 29 0M232 73c9-10 20-10 29 0"
-        fill="none"
-        stroke={colors.ink}
-        strokeLinecap="round"
-        strokeWidth="7"
-      />
-      <Circle cx="169" cy="86" r="9" fill={colors.coral} />
-    </Svg>
-  );
-}
 
 export function EmptyStateVisual() {
   const colors = useTheme();
