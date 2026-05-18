@@ -19,6 +19,7 @@
  */
 
 import { listen } from "@tauri-apps/api/event";
+import { isTauriRuntime } from "./browserStorage";
 
 const BASE_URL = "http://127.0.0.1:8765";
 
@@ -332,6 +333,9 @@ export async function buildRelationship(
 export function onCaptureTriggered(
   callback: (event: CaptureEvent) => void,
 ): Promise<() => void> {
+  if (!isTauriRuntime()) {
+    return Promise.resolve(() => {});
+  }
   return listen<CaptureEvent>("btw-capture", (e) => callback(e.payload));
 }
 

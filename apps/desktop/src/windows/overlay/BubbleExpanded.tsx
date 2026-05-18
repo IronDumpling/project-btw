@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { isTauriRuntime } from "../../lib/browserStorage";
 import { captureStore, useCaptureStore } from "../../lib/captureStore";
 import { ensureContact, sanitizeToId } from "../../lib/contactRegistry";
 import CaptureCard from "./CaptureCard";
@@ -50,6 +51,10 @@ function ContactsPanel({ selectedId, onSelect, reloadKey }: ContactsPanelProps) 
   const state = useCaptureStore();
 
   function loadContacts() {
+    if (!isTauriRuntime()) {
+      setContacts([]);
+      return;
+    }
     invoke<ContactEntry[]>("list_contacts")
       .then(setContacts)
       .catch(() => setContacts([]));
@@ -72,6 +77,11 @@ function ContactsPanel({ selectedId, onSelect, reloadKey }: ContactsPanelProps) 
   async function confirmAdd() {
     const name = newName.trim();
     if (!name) return;
+    if (!isTauriRuntime()) {
+      setAdding(false);
+      setNewName("");
+      return;
+    }
     const id = sanitizeToId(name);
     await ensureContact(id, name, "manual");
     loadContacts();
