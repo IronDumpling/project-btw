@@ -7,6 +7,7 @@ const isProduction = appEnv === "production";
 const isTest = appEnv === "test";
 
 const config: ExpoConfig = {
+  owner: "char_iron",
   name: isProduction ? "Between" : isTest ? "Between Test" : "Between Dev",
   slug: "between-mobile-ios",
   version: "0.1.0",
@@ -30,6 +31,9 @@ const config: ExpoConfig = {
   },
   plugins: ["expo-router", "expo-secure-store", "expo-sqlite"],
   extra: {
+    eas: {
+      projectId: "277bc554-0e20-45ff-9168-5e70996a2328",
+    },
     appEnv,
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8765",
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",

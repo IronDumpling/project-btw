@@ -17,6 +17,9 @@ dist-ssr
 .cursor/*
 .claude
 .claude/*
+.superpowers
+.superpowers/
+.superpowers/*
 .vscode
 .vscode/*
 !.vscode/extensions.json
@@ -39,8 +42,19 @@ backend/__pycache__/
 .venv/
 backend/.venv/
 backend/.venv*/
+backend/*.db
+backend/*.db-*
 
 # Gateway secrets — never commit real API keys
 backend/.env
-backend/*.db
-backend/*.db-*
+
+# Expo / React Native (apps/mobile — npm-managed, not pnpm)
+apps/mobile/.expo/
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/dist/
+apps/mobile/.env
+apps/mobile/.env.local
+apps/mobile/.env.test
+apps/mobile/.env.production
+apps/mobile/expo-env.d.ts

@@ -1,31 +1,16 @@
 {
-  "name": "project-btw",
+  "name": "btw-monorepo",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "tauri": "tauri"
+    "dev:desktop": "pnpm --filter btw-desktop dev",
+    "dev:web": "pnpm --filter btw-web dev",
+    "build:desktop": "pnpm --filter btw-desktop build",
+    "build:web": "pnpm --filter btw-web build",
+    "tauri": "pnpm --filter btw-desktop tauri",
+    "dev:mobile": "npm --prefix apps/mobile run start",
+    "ios": "npm --prefix apps/mobile run ios",
+    "validate:mobile": "npm --prefix apps/mobile run validate"
   },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.2.2",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.7.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router-dom": "^7.14.0",
-    "tailwindcss": "^4.2.2"
-  },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^4.6.0",
-    "typescript": "~5.8.3",
-    "vite": "^7.0.4"
-  }
+  "packageManager": "pnpm@9.0.0"
 }
